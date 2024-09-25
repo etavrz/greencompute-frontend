@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main  # Replace with the branch you want to trigger the workflow on
-      - feat/deploy-docker
 
 jobs:
   lint:

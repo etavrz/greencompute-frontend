@@ -1,6 +1,6 @@
 # greencompute-frontend
 
-Starter template for python projects.
+The frontend component of the GreenCompute project.
 
 ## Getting Started
 

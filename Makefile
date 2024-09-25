@@ -7,3 +7,6 @@ make test:
 
 make lint:
 	poetry run pre-commit run --all-files
+
+make run:
+	poetry run streamlit run greencompute_frontend/app.py

@@ -39,3 +39,9 @@ ENV PATH /app/venv/bin:$PATH
 # Set the working directory and copy the source code
 WORKDIR /app
 COPY . /app
+
+EXPOSE 8501
+
+HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
+
+ENTRYPOINT ["streamlit", "run", "greencompute_frontend/app.py", "--server.port=8501", "--server.address=0.0.0.0"]

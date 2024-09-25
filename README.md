@@ -1,6 +1,6 @@
 # greencompute-frontend
 
-Starter template for python projects.
+The frontend component of the GreenCompute project.
 
 ## Getting Started
 
@@ -21,4 +21,3 @@ To get started, clone the repository and install the dependencies:
 ```bash
 make install
 ```
-

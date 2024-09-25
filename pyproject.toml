@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "greencompute_frontend"
+version = "0.0.0"
+description = ""
+authors = ["Elias Tavarez <etav@berkeley.edu>"]
+readme = "README.md"
+packages = [{ include = "greencompute_frontend", from = "." }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+scikit-learn = "^1.5.1"
+pandas = "^2.2.2"
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.5"
+loguru = "^0.7.2"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.1"
+
+
+[tool.poetry.group.lint.dependencies]
+pre-commit = "^3.7.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

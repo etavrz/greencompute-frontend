@@ -40,8 +40,8 @@ ENV PATH /app/venv/bin:$PATH
 WORKDIR /app
 COPY . /app
 
-EXPOSE 8501
+EXPOSE 80
 
-HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
+ENTRYPOINT ["streamlit", "run", "greencompute_frontend/app.py", "--server.port=80", "--server.address=0.0.0.0"]
 
-ENTRYPOINT ["streamlit", "run", "greencompute_frontend/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+HEALTHCHECK CMD curl --fail http://localhost:80/_stcore/health

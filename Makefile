@@ -10,3 +10,6 @@ make lint:
 
 make run:
 	poetry run streamlit run greencompute_frontend/app.py
+
+make build:
+	docker build -t greencompute-frontend .

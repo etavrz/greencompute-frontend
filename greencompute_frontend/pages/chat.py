@@ -1,11 +1,13 @@
 import streamlit as st
 import requests
 
+# mainly composed from https://docs.streamlit.io/develop/tutorials/llms/build-conversational-apps#introduction
+
 st.title("GreenCompute Recommender")
 
 
 def chat_response(query: str):
-    # Make a post request to localhost:8000/chat with the query
+    """Query the RAG model and return the response."""
     response = requests.post("http://localhost:8000/llm/rag", json={"query": query})
     return response.json()["body"]
 
@@ -21,13 +23,14 @@ for message in st.session_state.messages:
 
 # React to user input
 if prompt := st.chat_input("What is up?"):
-    # Display user message in chat message container
+    # User message
     with st.chat_message("user"):
         st.markdown(prompt)
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
     response = chat_response(prompt)
-    # Display assistant response in chat message container
+
+    # Assistant response
     with st.chat_message("assistant"):
         st.markdown(response)
     # Add assistant response to chat history

@@ -11,6 +11,7 @@ python = "^3.11"
 streamlit = "^1.38.0"
 plotly = "^5.24.1"
 python-dotenv = "^1.0.1"
+watchdog = "^5.0.3"
 xgboost = "^2.1.1"
 scikit-learn = "^1.5.2"
 

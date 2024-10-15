@@ -1,8 +1,0 @@
-pip install streamlit
-pip install pandas
-pip install numpy
-pip install altair
-pip install base64
-pip install pickle
-pip install scikit-learn
-pip install xgboost

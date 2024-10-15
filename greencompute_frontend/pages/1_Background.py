@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 import base64
+import requests
 
 # Paths to the logos
 logo1 = "./images/logo1.png"
@@ -36,7 +37,11 @@ add_logo(logo1, "260px")
 add_logo(logo3, "260px")
 
 
-df = pd.read_csv("./Cloud Carbon Footprint - Embodied Emissions.csv")
+try:
+    data = requests.get("http://localhost:8000/ml/emissions-data").json()
+    df = pd.DataFrame(data)
+except requests.exceptions.RequestException:
+    df = pd.read_csv("./Cloud Carbon Footprint - Embodied Emissions.csv")
 
 # Rename columns
 df.columns = ["series", "vm", "CPU", "memory", "carbon_emission", "carbon_emission2"]

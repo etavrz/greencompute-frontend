@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import base64
+import requests
 import pickle
 
 # Paths to the logos
@@ -9,7 +10,7 @@ logo1 = "./images/logo1.png"
 logo2 = "./images/logo2.png"
 logo3 = "./images/logo3.png"
 
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="Compute", layout="wide")
 
 
 def add_logo(logo, width):
@@ -55,7 +56,8 @@ st.write(
     "<h5 style='color: grey;font-style: italic;'>Estimate carbon emission amount for your data centers and get personalized recommendations</h5>",
     unsafe_allow_html=True,
 )
-st.image("./images/data_model.png")
+with st.expander("How we make our predictions"):
+    st.image("./images/data_model.png")
 
 # User inputs for memory and CPU
 # memory_input = st.number_input("Enter memory (MB)", min_value=0, max_value=55000, step=100)
@@ -232,17 +234,6 @@ st.write(
     unsafe_allow_html=True,
 )
 
-
-# Load the trained XGBoost model from the file
-def load_cloud_model():
-    with open("xgb_carbon_model.pkl", "rb") as file:
-        xgb_model = pickle.load(file)
-    return xgb_model
-
-
-# Load the model once the app is launched
-xgb_model = load_cloud_model()
-
 # Collect user input (assuming memory_input and avg_cpus are gathered through input fields)
 # memory_input = st.number_input("Enter memory (MB)", min_value=0, max_value=55000, step=100)
 # avg_cpus = st.number_input("Enter CPU usage (%)", min_value=0, max_value=100, step=1)
@@ -253,14 +244,27 @@ if st.button("Predict Carbon Emission"):
     input_data = pd.DataFrame({"memory": [memory_input], "CPU": [avg_cpus]})
 
     # Predict log-transformed carbon emission
-    log_pred_xgb = xgb_model.predict(input_data)
+    try:
+        response = requests.post(
+            "http://localhost:8000/ml/carbon-emissions",
+            json={"memory": memory_input, "cpu": avg_cpus},
+        ).json()
+        # Reverse the log transformation to get the actual carbon emission
+        carbon_emission_pred_xgb = np.exp(response["carbon"])
+    except requests.exceptions.RequestException:
+        # Load the trained XGBoost model from the file
+        def load_cloud_model():
+            with open("xgb_carbon_model.pkl", "rb") as file:
+                xgb_model = pickle.load(file)
+            return xgb_model
 
-    # Reverse the log transformation to get the actual carbon emission
-    carbon_emission_pred_xgb = np.exp(log_pred_xgb)
+        # Load the model once the app is launched
+        xgb_model = load_cloud_model()
+        carbon_emission_pred_xgb = xgb_model.predict(input_data)[0]
 
     # Display the predicted carbon emission
     st.write(
-        f"#### Predicted Carbon Emission (by XGBoost): {carbon_emission_pred_xgb[0]:.2f} units"
+        f"#### Predicted Carbon Emission (by XGBoost): {carbon_emission_pred_xgb:.2f} units"
     )
 
 

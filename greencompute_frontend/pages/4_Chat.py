@@ -1,6 +1,8 @@
 import streamlit as st
 import requests
 
+from greencompute_frontend.utils import stream_llm_response
+
 # mainly composed from https://docs.streamlit.io/develop/tutorials/llms/build-conversational-apps#introduction
 
 st.title("GreenCompute Recommender")
@@ -28,10 +30,10 @@ if prompt := st.chat_input("What is up?"):
         st.markdown(prompt)
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
-    response = chat_response(prompt)
 
-    # Assistant response
+    # Display assistant response in chat message container
     with st.chat_message("assistant"):
-        st.markdown(response)
+        response = st.write_stream(stream_llm_response(prompt))
+
     # Add assistant response to chat history
     st.session_state.messages.append({"role": "assistant", "content": response})

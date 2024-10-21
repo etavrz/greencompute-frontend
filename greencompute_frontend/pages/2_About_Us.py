@@ -2,10 +2,8 @@ import streamlit as st
 import base64
 
 # Paths to the logos
-logo1 = "./images/logo1.png"
-logo2 = "./images/logo2.png"
 logo3 = "./images/logo3.png"
-
+st.set_page_config(page_title="About Us", layout="wide")
 
 def add_logo(logo, width):
     # Read the image and convert it to Base64
@@ -30,7 +28,6 @@ def add_logo(logo, width):
 
 
 # Call the add_logo function with the path to your local image
-add_logo(logo1, "260px")
 add_logo(logo3, "260px")
 
 # Change the background color
@@ -38,15 +35,26 @@ st.markdown(
     """
     <style>
     .stApp {
-        background-color: #d9e4dd;  /* Light gray-green */
+        background-color: #d2e7ae;  /* #c0dc8f Light gray-green */
     }
+    .custom-label{
+        color: #3b8bc2;
+        font-size: 18px;  /* Set the font size for text input, number input, and text area */
+        padding: 10px;    /* Optional: adjust padding for better appearance */
+    }
+    p, li, span{
+        color: #4b7170;
+        font-size: 18px;  /* Set default font size */
+        /* font-weight: bold;   Make the text bold */
+    }
+    
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 # Customizing the title with HTML/CSS to make it larger and green
-st.markdown("<h1 style='color: green;'>About Us</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color: #4b7170;font-size: 60px;'>About Us</h1>", unsafe_allow_html=True)
 
 
 # Define group members

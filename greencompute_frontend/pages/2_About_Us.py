@@ -5,6 +5,7 @@ import base64
 logo3 = "./images/logo3.png"
 st.set_page_config(page_title="About Us", layout="wide")
 
+
 def add_logo(logo, width):
     # Read the image and convert it to Base64
     with open(logo, "rb") as f:
@@ -47,14 +48,16 @@ st.markdown(
         font-size: 18px;  /* Set default font size */
         /* font-weight: bold;   Make the text bold */
     }
-    
+
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 # Customizing the title with HTML/CSS to make it larger and green
-st.markdown("<h1 style='color: #4b7170;font-size: 60px;'>About Us</h1>", unsafe_allow_html=True)
+st.markdown(
+    "<h1 style='color: #4b7170;font-size: 60px;'>About Us</h1>", unsafe_allow_html=True
+)
 
 
 # Define group members

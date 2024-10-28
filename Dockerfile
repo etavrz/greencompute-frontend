@@ -20,7 +20,7 @@ COPY pyproject.toml poetry.lock ./
 
 # Create the virtual environment and install dependencies
 RUN python -m venv --copies /app/venv
-RUN . /app/venv/bin/activate && poetry install --only main --no-root
+RUN . /app/venv/bin/activate && poetry install --only main
 
 #############
 # Deployment image

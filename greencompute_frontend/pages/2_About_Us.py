@@ -2,8 +2,13 @@ import streamlit as st
 import base64
 
 # Paths to the logos
-logo3 = "./images/logo3.png"
-st.set_page_config(page_title="About Us", layout="wide")
+logo = "./images/logo4.png"
+
+st.set_page_config(page_title="Compute", layout="wide")
+
+###########################
+# Add LOGO
+###########################
 
 
 def add_logo(logo, width):
@@ -18,8 +23,8 @@ def add_logo(logo, width):
             [data-testid="stSidebarNav"] {{
                 background-image: url("data:image/png;base64,{data}");
                 background-repeat: no-repeat;
-                padding-top: 180px;
-                background-position: 20px 20px;
+                padding-top: 150px;
+                background-position: 10px 10px;
                 background-size: {width};
             }}
         </style>
@@ -29,7 +34,23 @@ def add_logo(logo, width):
 
 
 # Call the add_logo function with the path to your local image
-add_logo(logo3, "260px")
+add_logo(logo, "200px")
+
+st.markdown(
+    """
+    <style>
+    /* Style for the sidebar content */
+    [data-testid="stSidebarContent"] {
+        background-color: white; /*#bac9b9; Sidebar background color */
+    }
+    /* Set color for all text inside the sidebar */
+    [data-testid="stSidebar"] * {
+        color: #3b8bc2 !important;  /* Text color */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # Change the background color
 st.markdown(

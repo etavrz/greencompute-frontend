@@ -2,13 +2,18 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 import base64
+import streamlit.components.v1 as components
+
 
 # Paths to the logos
-logo3 = "./images/logo3.png"
+logo = "./images/logo4.png"
 
-st.set_page_config(page_title="Background", layout="wide")
+st.set_page_config(page_title="Compute", layout="wide")
 
 
+###########################
+# Add LOGO
+###########################
 def add_logo(logo, width):
     # Read the image and convert it to Base64
     with open(logo, "rb") as f:
@@ -21,8 +26,8 @@ def add_logo(logo, width):
             [data-testid="stSidebarNav"] {{
                 background-image: url("data:image/png;base64,{data}");
                 background-repeat: no-repeat;
-                padding-top: 180px;
-                background-position: 20px 20px;
+                padding-top: 150px;
+                background-position: 10px 10px;
                 background-size: {width};
             }}
         </style>
@@ -32,13 +37,30 @@ def add_logo(logo, width):
 
 
 # Call the add_logo function with the path to your local image
-add_logo(logo3, "260px")
+add_logo(logo, "200px")
 
 
 df = pd.read_csv("./Cloud Carbon Footprint - Embodied Emissions.csv")
 
 # Rename columns
 df.columns = ["series", "vm", "CPU", "memory", "carbon_emission", "carbon_emission2"]
+
+st.markdown(
+    """
+    <style>
+    /* Style for the sidebar content */
+    [data-testid="stSidebarContent"] {
+        background-color: white; /*#bac9b9; Sidebar background color */
+    }
+    /* Set color for all text inside the sidebar */
+    [data-testid="stSidebar"] * {
+        color: #3b8bc2 !important;  /* Text color */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 # Change the background color
 st.markdown(
@@ -73,10 +95,14 @@ st.write(
     "##### Data centers are critical infrastructure that significantly contribute to global carbon emissions. Operators lack effective tools to track, manage, and optimize their carbon footprint."
 )
 
+################################
+# Data Visualization
+################################
+
 # Horizontal line
 st.markdown("<hr>", unsafe_allow_html=True)
 st.write(
-    "<h3 style='color: #4b7170;font-style: italic;'>Our Data</h3>",
+    "<h3 style='color: #4b7170;font-style: italic;'>Embodied Carbon</h3>",
     unsafe_allow_html=True,
 )
 
@@ -99,6 +125,7 @@ with col1:
 
     st.altair_chart(scatter_plot, use_container_width=True)
 
+
 # Scatter plot for Column C vs Column B
 with col2:
     st.write("##### Carbon Emission vs. Memory")
@@ -114,6 +141,42 @@ with col2:
     )
 
     st.altair_chart(scatter_plot, use_container_width=True)
+
+# Horizontal line
+st.markdown("<hr>", unsafe_allow_html=True)
+st.write(
+    "<h3 style='color: #4b7170;font-style: italic;'>Power Usage Effectiveness</h3>",
+    unsafe_allow_html=True,
+)
+
+# Define the URL to the Tableau public visualization
+tableau_url = "https://public.tableau.com/views/PUE_State/Dashboard1"
+
+# Embed the Tableau dashboard using an iframe
+components.html(
+    f"""
+    <iframe src="{tableau_url}?:embed=y&:display_count=yes&:showVizHome=no"
+            width="1000" height="827" style="border: none;"></iframe>
+    """,
+    height=830,
+)
+
+
+# Define the URL to the Tableau public visualization
+tableau_url = "https://public.tableau.com/views/Num_Data_centers/Dashboard1"
+
+# Set desired width and height
+viz_width = 1200  # Change to your preferred width
+viz_height = 820  # Change to your preferred height
+
+# Embed the Tableau dashboard using an iframe
+components.html(
+    f"""
+    <iframe src="{tableau_url}?:embed=y&:display_count=no&:showVizHome=no&:toolbar=no"
+            width="{viz_width}" height="{viz_height}" style="border: none;"></iframe>
+    """,
+    height=viz_height + 10,
+)
 
 ################################
 # Data Model

@@ -5,8 +5,9 @@ import base64
 import requests
 import pickle
 
+
 # Paths to the logos
-logo3 = "./images/logo3.png"
+logo = "./images/logo4.png"
 
 st.set_page_config(page_title="Compute", layout="wide")
 
@@ -26,8 +27,8 @@ def add_logo(logo, width):
             [data-testid="stSidebarNav"] {{
                 background-image: url("data:image/png;base64,{data}");
                 background-repeat: no-repeat;
-                padding-top: 180px;
-                background-position: 20px 12px;
+                padding-top: 150px;
+                background-position: 10px 10px;
                 background-size: {width};
             }}
         </style>
@@ -37,11 +38,27 @@ def add_logo(logo, width):
 
 
 # Call the add_logo function with the path to your local image
-add_logo(logo3, "260px")
+add_logo(logo, "200px")
 
 #############################
 # Change the background color
 #############################
+
+st.markdown(
+    """
+    <style>
+    /* Style for the sidebar content */
+    [data-testid="stSidebarContent"] {
+        background-color: white; /*#bac9b9; Sidebar background color */
+    }
+    /* Set color for all text inside the sidebar */
+    [data-testid="stSidebar"] * {
+        color: #3b8bc2 !important;  /* Text color */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 st.markdown(
     """
@@ -242,7 +259,6 @@ with server_col3:
         questions["Server Energy and Carbon"][4], min_value=0, step=50
     )
 
-
 # Add a horizontal line separator
 st.markdown("<hr>", unsafe_allow_html=True)
 
@@ -285,45 +301,6 @@ if st.button("Submit"):
     st.write(f"Water-side Economization: {water_economization}")
     st.write(f"Air-side Economization: {air_economization}")
     st.write(f"Chiller Type: {chiller_type}")
-
-
-# Add a button to show the file uploader
-if st.button("File Upload"):
-    # Display the file uploader
-    uploaded_file = st.file_uploader(
-        "Choose a file", type=["csv", "txt", "xlsx"], label_visibility="collapsed"
-    )
-
-    # Check if a file was uploaded
-    if uploaded_file is not None:
-        # Display the file name
-        st.write(f"**Uploaded file:** {uploaded_file.name}")
-
-        # Read and display the content of the uploaded file
-        if uploaded_file.type == "text/csv":
-            try:
-                df = pd.read_csv(uploaded_file)
-                st.write("**DataFrame:**")
-                st.write(df)
-            except Exception as e:
-                st.error(f"Error reading the file: {e}")
-                df = pd.read_csv(uploaded_file)
-                st.write(df)
-        elif uploaded_file.type == "text/plain":
-            content = uploaded_file.read().decode("utf-8")
-            st.text_area("File content", content, height=300)
-        elif (
-            uploaded_file.type
-            == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        ):
-            df = pd.read_excel(uploaded_file)
-            st.write(df)
-
-    else:
-        st.write("Unsuccessful Submission")
-else:
-    st.write("Click the button above to upload a file.")
-
 
 ###########################
 # Predictions
@@ -380,6 +357,10 @@ if st.button("Calculate Carbon Emission"):
         {"Memory (GB)": [memory_input], "# Cores": [num_cores], "# Chips": [num_chips]}
     )
 
+    ######################
+    # Step1: IT Electricity
+    ######################
+
     ##### may need to Change ######
     try:
         response_server = requests.post(
@@ -394,14 +375,51 @@ if st.button("Calculate Carbon Emission"):
 
     except requests.exceptions.RequestException:
         # Load the trained random forest model from the file
-        def load_cloud_model():
-            with open("rf_server_model_3vars.pkl", "rb") as file:
-                rf_model = pickle.load(file)
-            return rf_model
+        def load_electricity_model():
+            with open("gbr_it_electricity_model.pkl", "rb") as file:
+                gbr_electricity_model = pickle.load(file)
+            return gbr_electricity_model
 
         # Load the model once the app is launched
-        rf_model = load_cloud_model()
-        server_pred_rf = rf_model.predict(input_data2)[0]
+        gbr_electricity_model = load_electricity_model()
+        server_pred_rf = gbr_electricity_model.predict(input_data2)[0]
+
+    ######################
+    # Step2: Active Idle
+    ######################
+
+    ##### may need to Change ######
+    try:
+        response_idle = requests.post(
+            "http://localhost:8000/ml/carbon-emissions",
+            json={
+                "Memory (GB)": memory_input,
+                "# Cores": num_cores,
+                "# Chips": num_chips,
+            },
+        ).json()
+        idle_pred_rf = response_idle["Average watts @ active idle"]
+
+    except requests.exceptions.RequestException:
+        # Load the trained random forest model from the file
+        def load_idle_model():
+            with open("rf_activeidle_model.pkl", "rb") as file:
+                rf_activeidle_model = pickle.load(file)
+            return rf_activeidle_model
+
+        # Load the model once the app is launched
+        rf_activeidle_model = load_idle_model()
+        idle_pred_rf = rf_activeidle_model.predict(input_data2)[0]
+
+    ######################
+    # Step2: Annual Power
+    ######################
+
+    # calculate annual average power
+    annual_average_power = 0.3 * server_pred_rf + 0.7 * idle_pred_rf
+
+    # Annual Total Energy
+    annual_total_energy = annual_average_power * 8760 * 1.05 * 1.20
 
     ###################################################
     # Predict PUE
@@ -445,10 +463,10 @@ if st.button("Calculate Carbon Emission"):
     ###################################################
 
     total_carbon_emission = (
-        pue_pred * server_pred_rf + carbon_emission_pred_xgb
-    )  # Need edit later: * num_servers
+        pue_pred * server_pred_rf * num_servers + carbon_emission_pred_xgb
+    )
     st.write(
-        f"<h4 style='color: #3b8bc2;'>The carbon footprint of your data center is {total_carbon_emission:.2f} units </h4>",
+        f"<h4 style='color: #3b8bc2;'>The carbon footprint of your data center is {total_carbon_emission:.2f} kgCO2 </h4>",
         unsafe_allow_html=True,
     )
 
@@ -458,18 +476,18 @@ if st.button("Calculate Carbon Emission"):
     # Column 1: Predicted Cloud Carbon Emission
     with col1:
         st.write(
-            f"Predicted Cloud Carbon Emission (by XGBoost): {carbon_emission_pred_xgb:.2f} units"
+            f"Predicted Cloud Carbon Emission: {carbon_emission_pred_xgb:.2f} kgCO2"
         )
 
     # Column 2: Predicted IT Server Electricity Consumption
     with col2:
         st.write(
-            f"Predicted IT Server Electricity Consumption (by RandomForest): {server_pred_rf:.2f} watts"
+            f"Predicted Annual Total Energy per Server: {server_pred_rf:.2f} Watts"
         )
 
     # Column 3: Predicted PUE
     with col3:
-        st.write(f"Predicted PUE (PLACE HOLDER): {pue_pred:.2f}")
+        st.write(f"Predicted PUE: {pue_pred:.2f}")
 
 
 ###################################################

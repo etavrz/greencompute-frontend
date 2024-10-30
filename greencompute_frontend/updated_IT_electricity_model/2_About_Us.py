@@ -10,6 +10,7 @@ st.set_page_config(page_title="Compute", layout="wide")
 # Add LOGO
 ###########################
 
+
 def add_logo(logo, width):
     # Read the image and convert it to Base64
     with open(logo, "rb") as f:
@@ -31,6 +32,7 @@ def add_logo(logo, width):
         unsafe_allow_html=True,
     )
 
+
 # Call the add_logo function with the path to your local image
 add_logo(logo, "200px")
 
@@ -47,7 +49,7 @@ st.markdown(
     }
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 # Change the background color
@@ -67,14 +69,16 @@ st.markdown(
         font-size: 18px;  /* Set default font size */
         /* font-weight: bold;   Make the text bold */
     }
-    
+
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 # Customizing the title with HTML/CSS to make it larger and green
-st.markdown("<h1 style='color: #4b7170;font-size: 60px;'>About Us</h1>", unsafe_allow_html=True)
+st.markdown(
+    "<h1 style='color: #4b7170;font-size: 60px;'>About Us</h1>", unsafe_allow_html=True
+)
 
 
 # Define group members

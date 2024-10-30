@@ -336,7 +336,7 @@ if st.button("Calculate Carbon Emission"):
         ).json()
 
         # Reverse the log transformation to get the actual carbon emission
-        carbon_emission_pred_xgb = np.exp(response["carbon"])
+        carbon_emission_pred_xgb = np.exp(response["prediction"])
 
     except requests.exceptions.RequestException:
         # Load the trained XGBoost model from the file
@@ -366,9 +366,9 @@ if st.button("Calculate Carbon Emission"):
         response_server = requests.post(
             "http://localhost:8000/ml/carbon-emissions",
             json={
-                "Memory (GB)": memory_input,
-                "# Cores": num_cores,
-                "# Chips": num_chips,
+                "memory": memory_input,
+                "cores": num_cores,
+                "chips": num_chips,
             },
         ).json()
         server_pred_rf = response_server["Average watts @ 50% of target load"]
@@ -393,12 +393,12 @@ if st.button("Calculate Carbon Emission"):
         response_idle = requests.post(
             "http://localhost:8000/ml/carbon-emissions",
             json={
-                "Memory (GB)": memory_input,
-                "# Cores": num_cores,
-                "# Chips": num_chips,
+                "memory": memory_input,
+                "cores": num_cores,
+                "chips": num_chips,
             },
         ).json()
-        idle_pred_rf = response_idle["Average watts @ active idle"]
+        idle_pred_rf = response_idle["prediction"]
 
     except requests.exceptions.RequestException:
         # Load the trained random forest model from the file

@@ -5,8 +5,11 @@ import base64
 import requests
 import pickle
 
+import os
+
+
 # Paths to the logos
-logo = "./images/logo.png"
+logo = "./images/logo4.png"
 
 st.set_page_config(page_title="Compute", layout="wide")
 
@@ -25,7 +28,7 @@ def add_logo(logo, width):
             [data-testid="stSidebarNav"] {{
                 background-image: url("data:image/png;base64,{data}");
                 background-repeat: no-repeat;
-                padding-top: 270px;
+                padding-top: 150px;
                 background-position: 10px 10px;
                 background-size: {width};
             }}
@@ -35,11 +38,27 @@ def add_logo(logo, width):
     )
 
 # Call the add_logo function with the path to your local image
-add_logo(logo, "260px")
+add_logo(logo, "200px")
 
 #############################
 # Change the background color
 #############################
+
+st.markdown(
+    """
+    <style>
+    /* Style for the sidebar content */
+    [data-testid="stSidebarContent"] {
+        background-color: white; /*#bac9b9; Sidebar background color */
+    }
+    /* Set color for all text inside the sidebar */
+    [data-testid="stSidebar"] * {
+        color: #3b8bc2 !important;  /* Text color */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 st.markdown(
     """
@@ -374,7 +393,7 @@ if st.button("Calculate Carbon Emission"):
     # Output
     ###################################################
     
-    total_carbon_emission = pue_pred * server_pred_rf + carbon_emission_pred_xgb #Need edit later: * num_servers
+    total_carbon_emission = pue_pred * server_pred_rf * num_servers + carbon_emission_pred_xgb
     st.write(f"<h4 style='color: #3b8bc2;'>The carbon footprint of your data center is {total_carbon_emission:.2f} kgCO2 </h4>", unsafe_allow_html=True)
     
     
@@ -387,7 +406,7 @@ if st.button("Calculate Carbon Emission"):
 
     # Column 2: Predicted IT Server Electricity Consumption
     with col2:
-        st.write(f"Predicted Annual Total Energy: {server_pred_rf:.2f} Watts")
+        st.write(f"Predicted Annual Total Energy per Server: {server_pred_rf:.2f} Watts")
 
     # Column 3: Predicted PUE
     with col3:

@@ -2,14 +2,19 @@ import streamlit as st
 import base64
 
 # Paths to the logos
-logo = "./images/logo.png" 
+logo = "./images/logo4.png"
 
-st.set_page_config(page_title="Background", layout="wide")
+st.set_page_config(page_title="Compute", layout="wide")
+
+###########################
+# Add LOGO
+###########################
+
 def add_logo(logo, width):
     # Read the image and convert it to Base64
     with open(logo, "rb") as f:
         data = base64.b64encode(f.read()).decode("utf-8")
-    
+
     # Inject CSS with Base64-encoded image into the sidebar
     st.markdown(
         f"""
@@ -17,7 +22,7 @@ def add_logo(logo, width):
             [data-testid="stSidebarNav"] {{
                 background-image: url("data:image/png;base64,{data}");
                 background-repeat: no-repeat;
-                padding-top: 270px;
+                padding-top: 150px;
                 background-position: 10px 10px;
                 background-size: {width};
             }}
@@ -27,7 +32,23 @@ def add_logo(logo, width):
     )
 
 # Call the add_logo function with the path to your local image
-add_logo(logo, "260px")
+add_logo(logo, "200px")
+
+st.markdown(
+    """
+    <style>
+    /* Style for the sidebar content */
+    [data-testid="stSidebarContent"] {
+        background-color: white; /*#bac9b9; Sidebar background color */
+    }
+    /* Set color for all text inside the sidebar */
+    [data-testid="stSidebar"] * {
+        color: #3b8bc2 !important;  /* Text color */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # Change the background color
 st.markdown(

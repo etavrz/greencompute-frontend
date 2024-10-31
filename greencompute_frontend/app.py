@@ -364,14 +364,14 @@ if st.button("Calculate Carbon Emission"):
     ##### may need to Change ######
     try:
         response_server = requests.post(
-            "http://localhost:8000/ml/carbon-emissions",
+            "http://localhost:8000/ml/it-electricity",
             json={
                 "memory": memory_input,
                 "cores": num_cores,
                 "chips": num_chips,
             },
         ).json()
-        server_pred_rf = response_server["Average watts @ 50% of target load"]
+        server_pred_rf = response_server["prediction"]
 
     except requests.exceptions.RequestException:
         # Load the trained random forest model from the file
@@ -391,7 +391,7 @@ if st.button("Calculate Carbon Emission"):
     ##### may need to Change ######
     try:
         response_idle = requests.post(
-            "http://localhost:8000/ml/carbon-emissions",
+            "http://localhost:8000/ml/active-idle",
             json={
                 "memory": memory_input,
                 "cores": num_cores,
@@ -442,10 +442,10 @@ if st.button("Calculate Carbon Emission"):
     ##### may need to Change ######
     try:
         response_pue = requests.post(
-            "http://localhost:8000/ml/carbon-emissions",
+            "http://localhost:8000/ml/pue",
             json=json_data,
         ).json()
-        pue_pred = response_pue["PUE"]
+        pue_pred = response_pue["prediction"]
 
     except requests.exceptions.RequestException:
         # Load the trained xgb model from the file

@@ -4,6 +4,8 @@ import numpy as np
 import base64
 import requests
 import pickle
+import time
+import json
 
 from loguru import logger
 
@@ -200,365 +202,438 @@ states = [
 ###########################
 # Add User Inputs
 ###########################
+tab_compute, tab_chat = st.tabs(["Compute", "Chat"])
 
-# Define the questions by model type #?# not working
-st.markdown(
-    """
-    <style>
-    .prompt-text {
-        color:#3b8bc2;  /* Set text color */
-        font-size: 18px;  /* Set font size */
-        /*  font-weight: bold;  Make text bold */
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-
-# Questions
-questions = {
-    "Server Energy and Carbon": [
-        "About how many servers are located in your data center?",
-        "On average, how many CPUs do servers in your data center have?",
-        "On average, how much memory does each server contain?",
-        "How many chips does each server have?",
-        "What many cores does each server have?",
-    ],
-    "PUE Model": [
-        "Where is your data center located?",
-        "Does the cooling system utilize water-side economization?",
-        "Does the cooling system utilize air-side economization?",
-        "What type of chiller is used?",
-    ],
-}
-
-# Display questions and gather inputs for "Server Energy and Carbon" model
-st.write(
-    "<h3 style='color: #4b7170;font-style: italic;'>Server Energy and Carbon Data</h3>",
-    unsafe_allow_html=True,
-)
-
-# Use three columns for inputs in the Server Energy and Carbon section
-server_col1, server_col2, server_col3 = st.columns(3)
-
-with server_col1:
-    num_servers = st.number_input(
-        questions["Server Energy and Carbon"][0], min_value=0, step=1
-    )
-    avg_cpus = st.number_input(
-        questions["Server Energy and Carbon"][1], min_value=0, step=1
-    )
-
-with server_col2:
-    memory_input = st.number_input(
-        questions["Server Energy and Carbon"][2], min_value=0, step=100
-    )
-    num_chips = st.number_input(
-        questions["Server Energy and Carbon"][3], min_value=0, step=50
-    )
-
-with server_col3:
-    num_cores = st.number_input(
-        questions["Server Energy and Carbon"][4], min_value=0, step=50
-    )
-
-# Add a horizontal line separator
-st.markdown("<hr>", unsafe_allow_html=True)
-
-# Display questions and gather inputs for "PUE Model"
-st.write(
-    "<h3 style='color: #4b7170;font-style: italic;'>PUE Model Input Data</h3>",
-    unsafe_allow_html=True,
-)
-
-# Use three columns for inputs in the PUE Model section
-pue_col1, pue_col2, pue_col3 = st.columns(3)
-
-with pue_col1:
-    water_economization = st.radio(questions["PUE Model"][1], ["Yes", "No"])
-    air_economization = st.radio(questions["PUE Model"][2], ["Yes", "No"])
-
-with pue_col2:
-    location = st.selectbox(questions["PUE Model"][0], states)
-
-with pue_col3:
-    chiller_type = st.selectbox(
-        questions["PUE Model"][3],
-        ["Air-cooled chiller", "Direct expansion system", "Water-cooled chiller"],
-    )
-
-
-# Add a button to submit the inputs
-if st.button("Submit"):
-    st.success("Thank you for your submission!")
-
-    # Optionally, display the collected data for confirmation
-    st.write("### Submitted Data")
-    st.write("**Server Energy and Carbon**")
-    st.write(f"Number of Servers: {num_servers}")
-    st.write(f"Average CPUs: {avg_cpus}")
-    st.write(f"Average Memory (MB): {memory_input}")
-
-    st.write("**PUE Model**")
-    st.write(f"Location: {location}")
-    st.write(f"Water-side Economization: {water_economization}")
-    st.write(f"Air-side Economization: {air_economization}")
-    st.write(f"Chiller Type: {chiller_type}")
-
-###########################
-# Predictions
-###########################
-
-# Create a DataFrame for dummy variables
-input_data_pue = pd.DataFrame(columns=chiller_economizer + states)
-
-# Create a row of zeros
-input_data_pue.loc[0] = 0
-
-# Horizontal line
-st.markdown("<hr>", unsafe_allow_html=True)
-
-st.write(
-    "<h3 style='color: #4b7170;font-style: italic;'>Estimate Carbon Footprint</h3>",
-    unsafe_allow_html=True,
-)
-
-# Predict Cloud Carbon Emission
-if st.button("Calculate Carbon Emission"):
-    ###################################################
-    # Predict log-transformed carbon emission
-    ###################################################
-
-    # Prepare the input data for prediction
-    input_data = pd.DataFrame({"memory": [memory_input], "CPU": [avg_cpus]})
-
-    try:
-        response = requests.post(
-            "http://localhost:8000/ml/carbon-emissions",
-            json={"memory": memory_input, "cpu": avg_cpus},
-        ).json()
-
-        # Reverse the log transformation to get the actual carbon emission
-        carbon_emission_pred_xgb = np.exp(response["prediction"])
-
-    except requests.exceptions.RequestException:
-        logger.warning("Unable to connect to the server. Loading the model locally.")
-
-        # Load the trained XGBoost model from the file
-        def load_cloud_model():
-            with open("xgb_carbon_model.pkl", "rb") as file:
-                xgb_model = pickle.load(file)
-            return xgb_model
-
-        # Load the model once the app is launched
-        xgb_model = load_cloud_model()
-        carbon_emission_pred_xgb = np.exp(xgb_model.predict(input_data)[0])
-
-    ###################################################
-    # Prepare the input data for electricity prediction
-    ###################################################
-
-    input_data2 = pd.DataFrame(
-        {"Memory (GB)": [memory_input], "# Cores": [num_cores], "# Chips": [num_chips]}
-    )
-
-    ######################
-    # Step1: IT Electricity
-    ######################
-
-    ##### may need to Change ######
-    try:
-        response_server = requests.post(
-            "http://localhost:8000/ml/it-electricity",
-            json={
-                "memory": memory_input,
-                "cores": num_cores,
-                "chips": num_chips,
-            },
-        ).json()
-        server_pred_rf = response_server["prediction"]
-
-    except requests.exceptions.RequestException:
-        logger.warning("Unable to connect to the server. Loading the model locally.")
-
-        # Load the trained random forest model from the file
-        def load_electricity_model():
-            with open("gbr_it_electricity_model.pkl", "rb") as file:
-                gbr_electricity_model = pickle.load(file)
-            return gbr_electricity_model
-
-        # Load the model once the app is launched
-        gbr_electricity_model = load_electricity_model()
-        server_pred_rf = gbr_electricity_model.predict(input_data2)[0]
-
-    ######################
-    # Step2: Active Idle
-    ######################
-
-    ##### may need to Change ######
-    try:
-        response_idle = requests.post(
-            "http://localhost:8000/ml/active-idle",
-            json={
-                "memory": memory_input,
-                "cores": num_cores,
-                "chips": num_chips,
-            },
-        ).json()
-        idle_pred_rf = response_idle["prediction"]
-
-    except requests.exceptions.RequestException:
-        # Load the trained random forest model from the file
-        def load_idle_model():
-            with open("rf_activeidle_model.pkl", "rb") as file:
-                rf_activeidle_model = pickle.load(file)
-            return rf_activeidle_model
-
-        # Load the model once the app is launched
-        rf_activeidle_model = load_idle_model()
-        idle_pred_rf = rf_activeidle_model.predict(input_data2)[0]
-
-    ######################
-    # Step2: Annual Power
-    ######################
-
-    # calculate annual average power
-    annual_average_power = 0.3 * server_pred_rf + 0.7 * idle_pred_rf
-
-    # Annual Total Energy
-    annual_total_energy = annual_average_power * 8760 * 1.05 * 1.20
-
-    ###################################################
-    # Predict PUE
-    ###################################################
-
-    chiller_economizer_input = determine_combination(
-        chiller_type, air_economization, water_economization
-    )
-    input_data3 = pd.DataFrame(columns=chiller_economizer + states)
-
-    # Create a row of zeros
-    input_data3.loc[0] = 0
-
-    # Set the appropriate dummy variables to 1 based on user input
-    input_data3.loc[0, chiller_economizer_input] = 1
-    input_data3.loc[0, location] = 1
-
-    json_data = input_data3.to_dict(orient="records")[0]
-
-    ##### may need to Change ######
-    try:
-        response_pue = requests.post(
-            "http://localhost:8000/ml/pue",
-            json=json_data,
-        ).json()
-        pue_pred = response_pue["prediction"]
-
-    except requests.exceptions.RequestException:
-        # Load the trained xgb model from the file
-        def load_cloud_model():
-            with open("xgb_pue_model.pkl", "rb") as file:
-                pue_model = pickle.load(file)
-            return pue_model
-
-        # Load the model once the app is launched
-        pue_model = load_cloud_model()
-        pue_pred = pue_model.predict(input_data3)[0]
-
-    ###################################################
-    # Output
-    ###################################################
-
-    total_carbon_emission = (
-        pue_pred * server_pred_rf * num_servers + carbon_emission_pred_xgb
-    )
-    st.write(
-        f"<h4 style='color: #3b8bc2;'>The carbon footprint of your data center is {total_carbon_emission:.2f} kgCO2 </h4>",
+with tab_compute:
+    # Define the questions by model type #?# not working
+    st.markdown(
+        """
+        <style>
+        .prompt-text {
+            color:#3b8bc2;  /* Set text color */
+            font-size: 18px;  /* Set font size */
+            /*  font-weight: bold;  Make text bold */
+        }
+        </style>
+        """,
         unsafe_allow_html=True,
     )
 
-    # Create three columns to display the predicted outputs
-    col1, col2, col3 = st.columns(3)
+    # Questions
+    questions = {
+        "Server Energy and Carbon": [
+            "About how many servers are located in your data center?",
+            "On average, how many CPUs do servers in your data center have?",
+            "On average, how much memory does each server contain?",
+            "How many chips does each server have?",
+            "What many cores does each server have?",
+        ],
+        "PUE Model": [
+            "Where is your data center located?",
+            "Does the cooling system utilize water-side economization?",
+            "Does the cooling system utilize air-side economization?",
+            "What type of chiller is used?",
+        ],
+    }
 
-    # Column 1: Predicted Cloud Carbon Emission
-    with col1:
-        st.write(
-            f"Predicted Cloud Carbon Emission: {carbon_emission_pred_xgb:.2f} kgCO2"
+    # Display questions and gather inputs for "Server Energy and Carbon" model
+    st.write(
+        "<h3 style='color: #4b7170;font-style: italic;'>Server Energy and Carbon Data</h3>",
+        unsafe_allow_html=True,
+    )
+
+    # Use three columns for inputs in the Server Energy and Carbon section
+    server_col1, server_col2, server_col3 = st.columns(3)
+
+    with server_col1:
+        num_servers = st.number_input(
+            questions["Server Energy and Carbon"][0], min_value=0, step=1
+        )
+        avg_cpus = st.number_input(
+            questions["Server Energy and Carbon"][1], min_value=0, step=1
         )
 
-    # Column 2: Predicted IT Server Electricity Consumption
-    with col2:
-        st.write(
-            f"Predicted Annual Total Energy per Server: {server_pred_rf:.2f} Watts"
+    with server_col2:
+        memory_input = st.number_input(
+            questions["Server Energy and Carbon"][2], min_value=0, step=100
+        )
+        num_chips = st.number_input(
+            questions["Server Energy and Carbon"][3], min_value=0, step=50
         )
 
-    # Column 3: Predicted PUE
-    with col3:
-        st.write(f"Predicted PUE: {pue_pred:.2f}")
+    with server_col3:
+        num_cores = st.number_input(
+            questions["Server Energy and Carbon"][4], min_value=0, step=50
+        )
 
+    # Add a horizontal line separator
+    st.markdown("<hr>", unsafe_allow_html=True)
 
-###################################################
-# Recommendation
-###################################################
+    # Display questions and gather inputs for "PUE Model"
+    st.write(
+        "<h3 style='color: #4b7170;font-style: italic;'>PUE Model Input Data</h3>",
+        unsafe_allow_html=True,
+    )
 
-# Horizontal line
-st.markdown("<hr>", unsafe_allow_html=True)
+    # Use three columns for inputs in the PUE Model section
+    pue_col1, pue_col2, pue_col3 = st.columns(3)
 
-st.write(
-    "<h3 style='color: #4b7170;font-style: italic;'>Get Your Personalized Recommendations</h3>",
-    unsafe_allow_html=True,
-)
+    with pue_col1:
+        water_economization = st.radio(questions["PUE Model"][1], ["Yes", "No"])
+        air_economization = st.radio(questions["PUE Model"][2], ["Yes", "No"])
 
-# Output Recommendation
-if st.button("Get Recommendations"):
-    # Display the recommendations
-    st.write("#### we recommend...")
+    with pue_col2:
+        location = st.selectbox(questions["PUE Model"][0], states)
+
+    with pue_col3:
+        chiller_type = st.selectbox(
+            questions["PUE Model"][3],
+            ["Air-cooled chiller", "Direct expansion system", "Water-cooled chiller"],
+        )
+
+    # Add a button to submit the inputs
+    if st.button("Submit"):
+        st.success("Thank you for your submission!")
+
+        # Optionally, display the collected data for confirmation
+        st.write("### Submitted Data")
+        st.write("**Server Energy and Carbon**")
+        st.write(f"Number of Servers: {num_servers}")
+        st.write(f"Average CPUs: {avg_cpus}")
+        st.write(f"Average Memory (MB): {memory_input}")
+
+        st.write("**PUE Model**")
+        st.write(f"Location: {location}")
+        st.write(f"Water-side Economization: {water_economization}")
+        st.write(f"Air-side Economization: {air_economization}")
+        st.write(f"Chiller Type: {chiller_type}")
+
+    ###########################
+    # Predictions
+    ###########################
+
+    # Create a DataFrame for dummy variables
+    input_data_pue = pd.DataFrame(columns=chiller_economizer + states)
+
+    # Create a row of zeros
+    input_data_pue.loc[0] = 0
 
     # Horizontal line
     st.markdown("<hr>", unsafe_allow_html=True)
 
     st.write(
-        "<h3 style='color: #4b7170;font-style: italic;'>Additional Questions</h3>",
+        "<h3 style='color: #4b7170;font-style: italic;'>Estimate Carbon Footprint</h3>",
         unsafe_allow_html=True,
     )
-    questions2 = [
-        "Do you maintain an inventory of servers in your data center?",
-        "What type of memory do most servers have? (SSD or HDD)",
-        "What is the typical temperature of air supplied to server racks?",
-        "What is the typical return air temperature to cooling coils?",
-        "Do you have active, working humidification controls?",
-        "Do you have active, working dehumidification controls?",
-        "What type of cooling system do you have? (Air-Cooled DX, Water-Cooled DX, Evaporatively-Cooled DX, or Chilled Water)",
-        "What is the chilled water leaving temperature?",
-        "What type of UPS do you have? (Double Conversion, Double Conversion + Filter, Delta Conversion, Rotary, None)",
-        "What is the average load factor of the UPS?",
-    ]
 
-    server_inv = st.radio(questions2[0], ["Yes", "No"])
-    memory_type = st.selectbox(questions2[1], ["SSD", "HDD"])
-    supply_temp = st.number_input(questions2[2], min_value=-50, step=1)
-    return_temp = st.number_input(questions2[3], min_value=-50, step=1)
-    cooling_system = st.selectbox(
-        questions2[4],
-        [
-            "Air-Cooled DX",
-            "Water-Cooled DX",
-            "Evaporatively-Cooled DX",
-            "Chilled Water",
-        ],
+    # Predict Cloud Carbon Emission
+    if st.button("Calculate Carbon Emission"):
+        ###################################################
+        # Predict log-transformed carbon emission
+        ###################################################
+
+        # Prepare the input data for prediction
+        input_data = pd.DataFrame({"memory": [memory_input], "CPU": [avg_cpus]})
+
+        try:
+            response = requests.post(
+                "http://localhost:8000/ml/carbon-emissions",
+                json={"memory": memory_input, "cpu": avg_cpus},
+            ).json()
+
+            # Reverse the log transformation to get the actual carbon emission
+            carbon_emission_pred_xgb = np.exp(response["prediction"])
+
+        except requests.exceptions.RequestException:
+            logger.warning(
+                "Unable to connect to the server. Loading the model locally."
+            )
+
+            # Load the trained XGBoost model from the file
+            def load_cloud_model():
+                with open("xgb_carbon_model.pkl", "rb") as file:
+                    xgb_model = pickle.load(file)
+                return xgb_model
+
+            # Load the model once the app is launched
+            xgb_model = load_cloud_model()
+            carbon_emission_pred_xgb = np.exp(xgb_model.predict(input_data)[0])
+        logger.debug(f"Embodied Carbon: {carbon_emission_pred_xgb}")
+
+        ###################################################
+        # Prepare the input data for electricity prediction
+        ###################################################
+
+        input_data2 = pd.DataFrame(
+            {
+                "Memory (GB)": [memory_input],
+                "# Cores": [num_cores],
+                "# Chips": [num_chips],
+            }
+        )
+
+        ######################
+        # Step1: IT Electricity
+        ######################
+
+        ##### may need to Change ######
+        try:
+            response_server = requests.post(
+                "http://localhost:8000/ml/it-electricity",
+                json={
+                    "memory": memory_input,
+                    "cores": num_cores,
+                    "chips": num_chips,
+                },
+            ).json()
+            server_pred_rf = response_server["prediction"]
+
+        except Exception as e:
+            logger.warning(f"{e} - loading the model locally.")
+
+            # Load the trained random forest model from the file
+            def load_electricity_model():
+                with open("gbr_it_electricity_model.pkl", "rb") as file:
+                    gbr_electricity_model = pickle.load(file)
+                return gbr_electricity_model
+
+            # Load the model once the app is launched
+            gbr_electricity_model = load_electricity_model()
+            server_pred_rf = gbr_electricity_model.predict(input_data2)[0]
+        logger.debug(f"IT Electricity: {server_pred_rf}")
+
+        ######################
+        # Step2: Active Idle
+        ######################
+
+        ##### may need to Change ######
+        try:
+            response_idle = requests.post(
+                "http://localhost:8000/ml/active-idle",
+                json={
+                    "memory": memory_input,
+                    "cores": num_cores,
+                    "chips": num_chips,
+                },
+            ).json()
+            idle_pred_rf = response_idle["prediction"]
+
+        except Exception as e:
+            logger.warning(f"{e} - loading the model locally.")
+
+            # Load the trained random forest model from the file
+            def load_idle_model():
+                with open("rf_activeidle_model.pkl", "rb") as file:
+                    rf_activeidle_model = pickle.load(file)
+                return rf_activeidle_model
+
+            # Load the model once the app is launched
+            rf_activeidle_model = load_idle_model()
+            idle_pred_rf = rf_activeidle_model.predict(input_data2)[0]
+
+        logger.debug(f"Idle Power: {idle_pred_rf}")
+        ######################
+        # Step2: Annual Power
+        ######################
+
+        # calculate annual average power
+        annual_average_power = 0.3 * server_pred_rf + 0.7 * idle_pred_rf
+
+        # Annual Total Energy
+        annual_total_energy = annual_average_power * 8760 * 1.05 * 1.20
+
+        ###################################################
+        # Predict PUE
+        ###################################################
+
+        chiller_economizer_input = determine_combination(
+            chiller_type, air_economization, water_economization
+        )
+        input_data3 = pd.DataFrame(columns=chiller_economizer + states)
+
+        # Create a row of zeros
+        input_data3.loc[0] = 0
+
+        # Set the appropriate dummy variables to 1 based on user input
+        input_data3.loc[0, chiller_economizer_input] = 1
+        input_data3.loc[0, location] = 1
+
+        json_data = input_data3.to_dict(orient="records")[0]
+        logger.debug(f"Input Data: {json_data}")
+
+        ##### may need to Change ######
+        try:
+            response_pue = requests.post(
+                "http://localhost:8000/ml/pue",
+                json=json_data,
+            ).json()
+            pue_pred = response_pue["prediction"]
+        except Exception as e:
+            logger.warning(f"{e} - loading the model locally.")
+
+            # Load the trained xgb model from the file
+            def load_cloud_model():
+                with open("xgb_pue_model.pkl", "rb") as file:
+                    pue_model = pickle.load(file)
+                return pue_model
+
+            # Load the model once the app is launched
+            pue_model = load_cloud_model()
+            pue_pred = pue_model.predict(input_data3)[0]
+        logger.debug(f"PUE: {pue_pred}")
+
+        ###################################################
+        # Output
+        ###################################################
+
+        total_carbon_emission = (
+            pue_pred * server_pred_rf * num_servers + carbon_emission_pred_xgb
+        )
+        st.write(
+            f"<h4 style='color: #3b8bc2;'>The carbon footprint of your data center is {total_carbon_emission:.2f} kgCO2 </h4>",
+            unsafe_allow_html=True,
+        )
+
+        # Create three columns to display the predicted outputs
+        col1, col2, col3 = st.columns(3)
+
+        # Column 1: Predicted Cloud Carbon Emission
+        with col1:
+            st.write(
+                f"Predicted Cloud Carbon Emission: {carbon_emission_pred_xgb:.2f} kgCO2"
+            )
+
+        # Column 2: Predicted IT Server Electricity Consumption
+        with col2:
+            st.write(
+                f"Predicted Annual Total Energy per Server: {server_pred_rf:.2f} Watts"
+            )
+
+        # Column 3: Predicted PUE
+        with col3:
+            st.write(f"Predicted PUE: {pue_pred:.2f}")
+
+    ###################################################
+    # Recommendation
+    ###################################################
+
+    # Horizontal line
+    st.markdown("<hr>", unsafe_allow_html=True)
+
+    st.write(
+        "<h3 style='color: #4b7170;font-style: italic;'>Get Your Personalized Recommendations</h3>",
+        unsafe_allow_html=True,
     )
-    humidification = st.radio(questions2[5], ["Yes", "No"])
-    dehumidification = st.radio(questions2[6], ["Yes", "No"])
-    chilled_water_temp = st.number_input(questions2[7], min_value=-50, step=1)
-    avg_load_factor = st.number_input(questions2[8], min_value=0, step=1)
-    ups_type = st.selectbox(
-        questions2[9],
-        [
-            "Double Conversion",
-            "Double Conversion + Filter",
-            "Delta Conversion",
-            "Rotary",
-            "None",
-        ],
-    )
+
+    # Output Recommendation
+    if st.button("Get Recommendations"):
+        # Display the recommendations
+        st.write("#### we recommend...")
+
+        # Horizontal line
+        st.markdown("<hr>", unsafe_allow_html=True)
+
+        st.write(
+            "<h3 style='color: #4b7170;font-style: italic;'>Additional Questions</h3>",
+            unsafe_allow_html=True,
+        )
+        questions2 = [
+            "Do you maintain an inventory of servers in your data center?",
+            "What type of memory do most servers have? (SSD or HDD)",
+            "What is the typical temperature of air supplied to server racks?",
+            "What is the typical return air temperature to cooling coils?",
+            "Do you have active, working humidification controls?",
+            "Do you have active, working dehumidification controls?",
+            "What type of cooling system do you have? (Air-Cooled DX, Water-Cooled DX, Evaporatively-Cooled DX, or Chilled Water)",
+            "What is the chilled water leaving temperature?",
+            "What type of UPS do you have? (Double Conversion, Double Conversion + Filter, Delta Conversion, Rotary, None)",
+            "What is the average load factor of the UPS?",
+        ]
+
+        server_inv = st.radio(questions2[0], ["Yes", "No"])
+        memory_type = st.selectbox(questions2[1], ["SSD", "HDD"])
+        supply_temp = st.number_input(questions2[2], min_value=-50, step=1)
+        return_temp = st.number_input(questions2[3], min_value=-50, step=1)
+        cooling_system = st.selectbox(
+            questions2[4],
+            [
+                "Air-Cooled DX",
+                "Water-Cooled DX",
+                "Evaporatively-Cooled DX",
+                "Chilled Water",
+            ],
+        )
+        humidification = st.radio(questions2[5], ["Yes", "No"])
+        dehumidification = st.radio(questions2[6], ["Yes", "No"])
+        chilled_water_temp = st.number_input(questions2[7], min_value=-50, step=1)
+        avg_load_factor = st.number_input(questions2[8], min_value=0, step=1)
+        ups_type = st.selectbox(
+            questions2[9],
+            [
+                "Double Conversion",
+                "Double Conversion + Filter",
+                "Delta Conversion",
+                "Rotary",
+                "None",
+            ],
+        )
+
+with tab_chat:
+
+    def stream_llm_response(query, chunk_size=10):
+        url = "http://127.0.0.1:8000/api/llm/stream-rag"
+        headers = {"accept": "application/json", "Content-Type": "application/json"}
+        payload = {
+            "body": query,
+            "llm_id": "amazon.titan-text-premier-v1:0",
+            "max_tokens": 512,
+            "stop_sequences": [],
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "top_k": 10,
+        }
+
+        with requests.post(
+            url, headers=headers, data=json.dumps(payload), stream=True
+        ) as response:
+            if response.status_code == 200:
+                # Stream the response content
+                for line in response.iter_lines(chunk_size=chunk_size):
+                    if line:  # Filter out keep-alive new lines
+                        decoded_line = line.decode("utf-8")
+                        for word in decoded_line.split(" "):
+                            yield word + " "
+                            time.sleep(0.08)
+            else:
+                yield f"Error: {response.status_code}, {response.text}"
+
+    st.title("GreenCompute Recommender")
+
+    def chat_response(query: str):
+        """Query the RAG model and return the response."""
+        response = requests.post("http://localhost:8000/llm/rag", json={"query": query})
+        return response.json()["body"]
+
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    # Display chat messages from history on app rerun
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # React to user input
+    if prompt := st.chat_input("What is up?"):
+        # User message
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
+        # Display assistant response in chat message container
+        with st.chat_message("assistant"):
+            response = st.write_stream(stream_llm_response(prompt))
+
+        # Add assistant response to chat history
+        st.session_state.messages.append({"role": "assistant", "content": response})

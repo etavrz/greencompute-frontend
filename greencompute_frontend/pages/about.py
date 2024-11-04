@@ -4,8 +4,6 @@ import base64
 # Paths to the logos
 logo = "./images/logo4.png"
 
-st.set_page_config(page_title="Compute", layout="wide")
-
 ###########################
 # Add LOGO
 ###########################

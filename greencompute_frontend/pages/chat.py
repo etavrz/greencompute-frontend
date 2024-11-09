@@ -82,8 +82,9 @@ def stream_llm_response(query, chunk_size=10):
         "max_tokens": 512,
         "stop_sequences": [],
         "temperature": 0.7,
-        "top_p": 0.9,
+        "top_p": 0.8,
         "top_k": 10,
+        "prompt": "cite",
     }
 
     with requests.post(
@@ -101,7 +102,48 @@ def stream_llm_response(query, chunk_size=10):
             yield f"Error: {response.status_code}, {response.text}"
 
 
-st.title("GreenCompute Recommender")
+def llm_response(query: str, context_size: int = 20):
+    """Query the RAG model and return the response.
+
+    Args:
+        query (str): Query to send to the RAG model.
+        context_size (int, optional): Context . Defaults to 20.
+
+    Yields:
+        str:
+    """
+    url = "http://127.0.0.1:8000/api/llm/rag"
+    headers = {"accept": "application/json", "Content-Type": "application/json"}
+    payload = {
+        "body": query,
+        "llm_id": "amazon.titan-text-premier-v1:0",
+        "max_tokens": 512,
+        "stop_sequences": [],
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "top_k": context_size,
+        "prompt": "cite",
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
+    response_str: str = response.json()["response"]
+
+    # Format the context items in markdown with the title and url
+    references = ""
+    titles = []
+    for i, context_item in enumerate(response.json()["context"]):
+        if context_item["doc_title"] in titles:
+            continue
+        titles.append(context_item["doc_title"])
+        references += f"{i+1}. [{context_item['doc_title']}]({context_item['url']})\n"
+
+    response_str += f"\n\n**References**:\n{references}"
+    for word in response_str.split(" "):
+        yield word + " "
+        time.sleep(0.08)
+
+
+st.title("GreenCompute Chat")
 
 
 def chat_response(query: str):
@@ -129,7 +171,7 @@ if prompt := st.chat_input("What is up?"):
 
     # Display assistant response in chat message container
     with st.chat_message("assistant"):
-        response = st.write_stream(stream_llm_response(prompt))
+        response = st.write_stream(llm_response(prompt))
 
     # Add assistant response to chat history
     st.session_state.messages.append({"role": "assistant", "content": response})

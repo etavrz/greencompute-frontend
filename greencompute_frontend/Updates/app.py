@@ -4,8 +4,11 @@ import numpy as np
 import base64
 import requests
 import pickle
-
+from streamlit_chat import message
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import os
+import time
 
 
 # Paths to the logos
@@ -105,7 +108,40 @@ if st.button("How we make our predictions"):
 # Display the image based on the state
 if st.session_state.show_image:
     st.image("./images/data_model_simple.png", width=800)
-    st.write("Formula: Total Carbon Emission = PUE * Server Electricity Consumption + Cloud Carbon Emission")
+    st.write("Formula: Total Carbon Emission = PUE * Server Electricity Consumption + Embodied Carbon")
+    
+    
+# Initialize the session state for displaying the typing effect
+if "show_text_once" not in st.session_state:
+    st.session_state.show_text_once = True
+
+# Placeholder for typing effect and counting effect on the same line
+text_placeholder = st.empty()
+
+# Display the text with a typing effect if it's the first page load/refresh
+if st.session_state.show_text_once:
+    # Typing effect for the text
+    text = "Enter your data center's Server Electricity Consumption, Embodied Carbon, and Power Usage Efficiency (PUE) details to generate a carbon emissions prediction."
+    typed_text = ""
+    for char in text:
+        typed_text += char
+        text_placeholder.markdown(
+            f"<h4 style='color: #3b8bc2;'>{typed_text}</h4>", unsafe_allow_html=True
+        )
+        time.sleep(0.01)  # Adjust for typing speed
+    
+    # Set the session state to prevent showing it again
+    st.session_state.show_text_once = False
+else:
+    # Display static text after the first load/refresh
+    text_placeholder.markdown(
+        "<h4 style='color: #3b8bc2;'>Enter your data center's Server Electricity Consumption, Embodied Carbon, and Power Usage Efficiency (PUE) details to generate a carbon emissions prediction.</h4>",
+        unsafe_allow_html=True
+    )
+
+###########################
+# Preparation for modeling
+###########################
 
 # Define possible categories for dummies
 chiller_economizer = ['Air-cooled chiller',
@@ -117,16 +153,16 @@ chiller_economizer = ['Air-cooled chiller',
                       'Waterside economizer + (water-cooled chiller)']
 
 
-def determine_combination(chiller_type, air_economization, water_economization):
-    if air_economization == "Yes" and chiller_type == 'Air-cooled chiller':
+def determine_combination(chiller_type, economization):
+    if economization == "Air-side Economization" and chiller_type == 'Air-cooled chiller':
         return 'Airside economizer + (air-cooled chiller)'
-    elif air_economization == "Yes" and chiller_type == 'Direct expansion system':
+    elif economization == "Air-side Economization" and chiller_type == 'Direct expansion system':
         return 'Airside economizer + (direct expansion system)'
-    elif air_economization == "Yes" and chiller_type == 'Water-cooled chiller':
+    elif economization == "Air-side Economization" and chiller_type == 'Water-cooled chiller':
         return 'Airside economizer + (water-cooled chiller)'
     elif chiller_type == 'Direct expansion system':
         return 'Direct expansion system'
-    elif chiller_type == 'Water-cooled chiller' and water_economization == "Yes":
+    elif chiller_type == 'Water-cooled chiller' and economization == "Water-side Economization":
         return 'Waterside economizer + (water-cooled chiller)'
     else:
         return chiller_type
@@ -165,78 +201,59 @@ questions = {
         "About how many servers are located in your data center?",
         "On average, how many CPUs do servers in your data center have?",
         "On average, how much memory does each server contain?",
-        "How many chips does each server have?",
         "What many cores does each server have?",
     ],
     "PUE Model": [
         "Where is your data center located?",
-        "Does the cooling system utilize water-side economization?",
+        "What type of cooling system is used utilize water-side economization?",
         "Does the cooling system utilize air-side economization?",
         "What type of chiller is used?",
     ],
 }
 
-# Display questions and gather inputs for "Server Energy and Carbon" model
-st.write(
-    "<h3 style='color: #4b7170;font-style: italic;'>Server Energy and Carbon Data</h3>",
-    unsafe_allow_html=True,
-)
-
-# Use three columns for inputs in the Server Energy and Carbon section
-server_col1, server_col2, server_col3 = st.columns(3)
-
-with server_col1:
-    num_servers = st.number_input(questions["Server Energy and Carbon"][0], min_value=0, step=1)
-    avg_cpus = st.number_input(questions["Server Energy and Carbon"][1], min_value=0, step=1)
-    
-with server_col2:
-    memory_input = st.number_input(questions["Server Energy and Carbon"][2], min_value=0, step=100)
-    num_chips = st.number_input(questions["Server Energy and Carbon"][3], min_value=0, step=50)
-    
-with server_col3:
-    num_cores = st.number_input(questions["Server Energy and Carbon"][4], min_value=0, step=50)
-
-    
 # Add a horizontal line separator
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# Display questions and gather inputs for "PUE Model"
-st.write(
-    "<h3 style='color: #4b7170;font-style: italic;'>PUE Model Input Data</h3>",
-    unsafe_allow_html=True,
-)
+# Use three columns for inputs in the Server Energy and Carbon section
+server_col1, separator, server_col2 = st.columns([2.2, 0.1, 2.2])
 
-# Use three columns for inputs in the PUE Model section
-pue_col1, pue_col2, pue_col3 = st.columns(3)
-
-with pue_col1:
-    water_economization = st.radio(questions["PUE Model"][1], ["Yes", "No"])
-    air_economization = st.radio(questions["PUE Model"][2], ["Yes", "No"])
+with server_col1:
     
-with pue_col2:
+    # Display questions and gather inputs for "Server Energy and Carbon" model
+    st.write(
+        "<h3 style='color: #4b7170;font-style: italic;'>Server Electricity and Embodied Carbon Input</h3>",
+        unsafe_allow_html=True,
+    )
+    
+    # Question list
+    num_servers = st.number_input(questions['Server Energy and Carbon'][0], min_value=1, step=1)
+    avg_cpus = st.number_input(questions['Server Energy and Carbon'][1], min_value=1, step=1)
+    memory_input = st.number_input(questions['Server Energy and Carbon'][2], min_value=1, step=100)
+    num_cores = st.number_input(questions['Server Energy and Carbon'][3], min_value=1, step=50)
+
+# Add a vertical separator line
+with separator:
+    st.markdown(
+        "<style>div.separator { height: 40vh; border-left: 1px solid #4b7170; margin-left: auto; margin-right: auto; }</style>"
+        "<div class='separator'></div>",
+        unsafe_allow_html=True,
+    )
+
+    
+with server_col2:
+    
+    # Display questions and gather inputs for "PUE Model"
+    st.write(
+        "<h3 style='color: #4b7170;font-style: italic;'>Power Usage Efficiency Input</h3>",
+        unsafe_allow_html=True,
+    )
+
+    economization = st.selectbox(questions["PUE Model"][1], ['Water-side Economization', 'Air-side Economization'])
     location = st.selectbox(questions["PUE Model"][0], states)
+    chiller_type = st.selectbox(questions["PUE Model"][2], ['Air-cooled chiller', 
+                                                            'Direct expansion system',
+                                                            'Water-cooled chiller'])
     
-with pue_col3:
-    chiller_type = st.selectbox(questions["PUE Model"][3], ['Air-cooled chiller', 
-                                                           'Direct expansion system','Water-cooled chiller'])
-    
-    
-# Add a button to submit the inputs
-if st.button("Submit"):
-    st.success("Thank you for your submission!")
-    
-    # Optionally, display the collected data for confirmation
-    st.write("### Submitted Data")
-    st.write("**Server Energy and Carbon**")
-    st.write(f"Number of Servers: {num_servers}")
-    st.write(f"Average CPUs: {avg_cpus}")
-    st.write(f"Average Memory (MB): {memory_input}")
-
-    st.write("**PUE Model**")
-    st.write(f"Location: {location}")
-    st.write(f"Water-side Economization: {water_economization}")
-    st.write(f"Air-side Economization: {air_economization}")
-    st.write(f"Chiller Type: {chiller_type}")
 
 ###########################
 # Predictions
@@ -291,7 +308,7 @@ if st.button("Calculate Carbon Emission"):
     ###################################################
     
     input_data2 = pd.DataFrame({"Memory (GB)": [memory_input], 
-                               "# Cores": [num_cores], "# Chips":[num_chips]})
+                               "# Cores": [num_cores], "# Chips":[avg_cpus]})
     
     ######################
     #Step1: IT Electricity
@@ -303,7 +320,7 @@ if st.button("Calculate Carbon Emission"):
             "http://localhost:8000/ml/carbon-emissions",
             json={"Memory (GB)": memory_input,
                   "# Cores": num_cores, 
-                  "# Chips": num_chips},
+                  "# Chips": avg_cpus},
         ).json()
         server_pred_rf = response_server["Average watts @ 50% of target load"]
         
@@ -328,7 +345,7 @@ if st.button("Calculate Carbon Emission"):
             "http://localhost:8000/ml/carbon-emissions",
             json={"Memory (GB)": memory_input,
                   "# Cores": num_cores, 
-                  "# Chips": num_chips},
+                  "# Chips": avg_cpus},
         ).json()
         idle_pred_rf = response_idle["Average watts @ active idle"]
         
@@ -357,60 +374,154 @@ if st.button("Calculate Carbon Emission"):
     ###################################################
     # Predict PUE
     ###################################################
-    
-    chiller_economizer_input = determine_combination(chiller_type, air_economization, water_economization)
-    input_data3 = pd.DataFrame(columns=chiller_economizer + states)
-    
-    # Create a row of zeros
-    input_data3.loc[0] = 0
 
-    # Set the appropriate dummy variables to 1 based on user input
-    input_data3.loc[0, chiller_economizer_input] = 1
-    input_data3.loc[0, location] = 1
+    # Prepare raw input data as required by the pipeline (without manual encoding)
+    input_data3 = pd.DataFrame({
+        'Cooling System': [chiller_type],
+        'state_name': [location]
+    })
     
     json_data = input_data3.to_dict(orient='records')[0]
 
-    ##### may need to Change ######
+    # Attempt prediction via API, fallback to local model if API fails
     try:
         response_pue = requests.post(
             "http://localhost:8000/ml/carbon-emissions",
             json=json_data,
         ).json()
         pue_pred = response_pue["PUE"]
-        
+
     except requests.exceptions.RequestException:
-        # Load the trained xgb model from the file
+        # Load the trained pipeline model from the file
         def load_cloud_model():
-            with open("xgb_pue_model.pkl", "rb") as file:
+            with open("xgb_pue_sklearn.pkl", "rb") as file:
                 pue_model = pickle.load(file)
             return pue_model
 
-        # Load the model once the app is launched
+        # Load and use the pipeline model to make a prediction
         pue_model = load_cloud_model()
         pue_pred = pue_model.predict(input_data3)[0]
+
+    print(f"Predicted PUE: {pue_pred}")
+
     
     ###################################################
     # Output
     ###################################################
     
+    # Calculate the total carbon emission
     total_carbon_emission = pue_pred * server_pred_rf * num_servers + carbon_emission_pred_xgb
-    st.write(f"<h4 style='color: #3b8bc2;'>The carbon footprint of your data center is {total_carbon_emission:.2f} kgCO2 </h4>", unsafe_allow_html=True)
-    
-    
-    # Create three columns to display the predicted outputs
-    col1, col2, col3 = st.columns(3)
 
-    # Column 1: Predicted Cloud Carbon Emission
+    # Placeholder for typing effect and counting effect on the same line
+    combined_placeholder = st.empty()
+
+    # Typing effect for the text
+    text = "The carbon footprint of your data center is "
+    typed_text = ""
+    for char in text:
+        typed_text += char
+        combined_placeholder.markdown(
+            f"<h4 style='color: #3b8bc2;'>{typed_text}</h4>", unsafe_allow_html=True
+        )
+        time.sleep(0.01)  # Adjust for typing speed
+
+    # Counting effect for the total emission value
+    final_value = round(total_carbon_emission, 2)
+    current_value = 0.0
+    increment = final_value / 100  # Adjust speed of the counter
+
+    while current_value < final_value:
+        current_value = min(current_value + increment, final_value)
+        combined_placeholder.markdown(
+            f"<h4 style='color: #3b8bc2;'>{typed_text}{current_value:.2f} kgCO₂</h4>", unsafe_allow_html=True
+        )
+        time.sleep(0.02)  # Adjust for counting speed
+        
+        
+    # Use three columns for inputs in the Server Energy and Carbon section
+    col1, separator, col2 = st.columns([2.2, 0.1, 2.2])
+    
+    # Column 1: Predicted Cloud Carbon Emission & visualization
     with col1:
+        
+        #################
+        # Visualizations
+        #################
+
+        # Assume some ranges for data center emissions (in metric tons of CO2 per year)
+        min_emission = 1000  # Lower end for a small data center
+        max_emission = 1000000  # Upper end for a large hyperscale data center
+
+        # Create a gradient color map from green to orange
+        cmap = mcolors.LinearSegmentedColormap.from_list("emission_cmap", ["green", "orange", "red"])
+
+        # Create the figure and axes
+        fig, ax = plt.subplots(figsize=(10, .82))
+
+        # Generate data points for the spectrum (x-axis)
+        x = np.linspace(min_emission, max_emission, 500)
+        y = np.zeros_like(x)
+
+        # Plot the gradient spectrum as a colored line
+        for i in range(len(x) - 1):
+            ax.plot(x[i:i+2], y[i:i+2], color=cmap(i / len(x)), linewidth=28)
+
+        # Add a vertical line for the predicted emission
+        ax.axvline(total_carbon_emission, color="#3b8bc2", linestyle="-", linewidth=4, 
+                   label=f"Prediction: {total_carbon_emission} kgCO₂")
+
+        # Add labels at both ends of the spectrum
+        ax.text(min_emission, 0.1, f"Small DC\n({min_emission} kgCO₂)", ha="center", color="green", fontsize=15)
+        ax.text(max_emission, 0.1, f"Hyperscale DC\n({max_emission} kgCO₂)", ha="center", color="red", fontsize=15)
+
+        # Label the prediction line
+        ax.text(total_carbon_emission, -0.12, f"{total_carbon_emission:.2f} kgCO₂", ha="center", color="#3b8bc2", fontsize=15)
+
+        # Hide the y-axis and spines for a cleaner look
+        ax.axis("off")
+
+        # Display the figure in Streamlit
+        st.pyplot(fig)
+        
+        # Prediction reulsts
         st.write(f"Predicted Cloud Carbon Emission: {carbon_emission_pred_xgb:.2f} kgCO2")
-
-    # Column 2: Predicted IT Server Electricity Consumption
-    with col2:
         st.write(f"Predicted Annual Total Energy per Server: {server_pred_rf:.2f} Watts")
+        st.write(f"Predicted PUE: {pue_pred:.2f}")        
 
-    # Column 3: Predicted PUE
-    with col3:
-        st.write(f"Predicted PUE: {pue_pred:.2f}")
+    # Add a vertical separator line
+    with separator:
+        st.markdown(
+            "<style>div.separator { height: 28vh; border-left: 1px solid #4b7170; margin-left: auto; margin-right: auto; }</style>"
+            "<div class='separator'></div>",
+            unsafe_allow_html=True,
+        )
+    
+    # Column 2: Environmental equivalents
+    with col2:
+        # Calculate interpretation: miles driven equivalent
+        miles_per_kg_co2 = 2.5  # Approximate miles driven per metric ton of CO₂
+        equivalent_miles = total_carbon_emission * miles_per_kg_co2
+
+        # Calculate interpretation: household power equivalent
+        daily_household_kg_co2 = 18  # Approximate daily CO₂ footprint for a typical household in kg
+        equivalent_household_days = total_carbon_emission / daily_household_kg_co2
+    
+        # Calculate interpretation: tree sequestration equivalent
+        annual_tree_sequestration_kg_co2 = 22  # Approximate CO₂ absorbed by a tree per year in kg
+        equivalent_trees = total_carbon_emission / annual_tree_sequestration_kg_co2
+
+        # Display the interpretation
+        st.write("<h4 style='color: #3b8bc2;'>🌍 Equivalent Carbon Emissions 🌍</h4>",unsafe_allow_html=True)
+        st.markdown(f"""
+        Your predicted emission of **{total_carbon_emission:.2f}** kgCO₂ is approximately equal to:
+        
+        •  🚗 Driving a typical car for **{equivalent_miles:,.0f} miles** \\
+        •  🏡 Powering an average household for **{equivalent_household_days:,.0f} days**\\
+        •  🌲 Sequestering carbon equivalent to **{equivalent_trees:,.0f} trees** over a year
+        
+
+        These estimates provide a tangible sense of the environmental impact of your data center's carbon emissions.
+        """, unsafe_allow_html=True)
     
 
 ###################################################
@@ -418,43 +529,18 @@ if st.button("Calculate Carbon Emission"):
 ###################################################
 
 # Horizontal line
-st.markdown("<hr>", unsafe_allow_html=True)
+# st.markdown("<hr>", unsafe_allow_html=True)
 
-st.write(
-    "<h3 style='color: #4b7170;font-style: italic;'>Get Your Personalized Recommendations</h3>",
-    unsafe_allow_html=True,
-)
+#st.write(
+    #"<h3 style='color: #4b7170;font-style: italic;'>Get Your Personalized Recommendations</h3>",
+    #unsafe_allow_html=True,)
 
 # Output Recommendation
-if st.button("Get Recommendations"):
+#if st.button("Get Recommendations"):
     # Display the recommendations
-    st.write("#### we recommend...")
+    #st.write("#### we recommend...")
     
     # Horizontal line
-    st.markdown("<hr>", unsafe_allow_html=True)
+    #st.markdown("<hr>", unsafe_allow_html=True)
 
-    st.write(
-        "<h3 style='color: #4b7170;font-style: italic;'>Additional Questions</h3>",
-        unsafe_allow_html=True,
-    )
-    questions2 = ["Do you maintain an inventory of servers in your data center?",
-                   "What type of memory do most servers have? (SSD or HDD)",
-                   "What is the typical temperature of air supplied to server racks?",
-                   "What is the typical return air temperature to cooling coils?",
-                   "Do you have active, working humidification controls?",
-                   "Do you have active, working dehumidification controls?",
-                   "What type of cooling system do you have? (Air-Cooled DX, Water-Cooled DX, Evaporatively-Cooled DX, or Chilled Water)",
-                  "What is the chilled water leaving temperature?",
-        "What type of UPS do you have? (Double Conversion, Double Conversion + Filter, Delta Conversion, Rotary, None)",
-        "What is the average load factor of the UPS?"]
-    
-    server_inv = st.radio(questions2[0], ["Yes", "No"])
-    memory_type = st.selectbox(questions2[1], ["SSD", "HDD"])
-    supply_temp = st.number_input(questions2[2], min_value=-50, step=1)
-    return_temp = st.number_input(questions2[3], min_value=-50, step=1)
-    cooling_system = st.selectbox(questions2[4], ["Air-Cooled DX", "Water-Cooled DX", "Evaporatively-Cooled DX","Chilled Water"])
-    humidification = st.radio(questions2[5], ["Yes", "No"])
-    dehumidification = st.radio(questions2[6], ["Yes", "No"])
-    chilled_water_temp = st.number_input(questions2[7], min_value=-50, step=1)
-    avg_load_factor = st.number_input(questions2[8], min_value=0, step=1)
-    ups_type = st.selectbox(questions2[9], ["Double Conversion", "Double Conversion + Filter", "Delta Conversion", "Rotary", "None"])
+   

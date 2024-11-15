@@ -1,14 +1,15 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
 import base64
-import requests
 import pickle
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 import time
-from millify import millify
 
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import requests
+import streamlit as st
+from loguru import logger
+from millify import millify
 
 # Paths to the logos
 logo = "./images/logo4.png"
@@ -110,9 +111,7 @@ if st.button("How we make our predictions"):
 # Display the image based on the state
 if st.session_state.show_image:
     st.image("./images/data_model_simple.png", width=800)
-    st.write(
-        "Formula: Total Carbon Emission = PUE * Server Electricity Consumption + Embodied Carbon"
-    )
+    st.write("Formula: Total Carbon Emission = PUE * Server Electricity Consumption + Embodied Carbon")
 
 
 # Initialize the session state for displaying the typing effect
@@ -129,9 +128,7 @@ if st.session_state.show_text_once:
     typed_text = ""
     for char in text:
         typed_text += char
-        text_placeholder.markdown(
-            f"<h4 style='color: #3b8bc2;'>{typed_text}</h4>", unsafe_allow_html=True
-        )
+        text_placeholder.markdown(f"<h4 style='color: #3b8bc2;'>{typed_text}</h4>", unsafe_allow_html=True)
         time.sleep(0.01)  # Adjust for typing speed
 
     # Set the session state to prevent showing it again
@@ -160,27 +157,15 @@ chiller_economizer = [
 
 
 def determine_combination(chiller_type, economization):
-    if (
-        economization == "Air-side Economization"
-        and chiller_type == "Air-cooled chiller"
-    ):
+    if economization == "Air-side Economization" and chiller_type == "Air-cooled chiller":
         return "Airside economizer + (air-cooled chiller)"
-    elif (
-        economization == "Air-side Economization"
-        and chiller_type == "Direct expansion system"
-    ):
+    elif economization == "Air-side Economization" and chiller_type == "Direct expansion system":
         return "Airside economizer + (direct expansion system)"
-    elif (
-        economization == "Air-side Economization"
-        and chiller_type == "Water-cooled chiller"
-    ):
+    elif economization == "Air-side Economization" and chiller_type == "Water-cooled chiller":
         return "Airside economizer + (water-cooled chiller)"
     elif chiller_type == "Direct expansion system":
         return "Direct expansion system"
-    elif (
-        chiller_type == "Water-cooled chiller"
-        and economization == "Water-side Economization"
-    ):
+    elif chiller_type == "Water-cooled chiller" and economization == "Water-side Economization":
         return "Waterside economizer + (water-cooled chiller)"
     else:
         return chiller_type
@@ -289,24 +274,15 @@ with server_col1:
     )
 
     # Question list
-    num_servers = st.number_input(
-        questions["Server Energy and Carbon"][0], min_value=1, step=1
-    )
-    avg_cpus = st.number_input(
-        questions["Server Energy and Carbon"][1], min_value=1, step=1
-    )
-    memory_input = st.number_input(
-        questions["Server Energy and Carbon"][2], min_value=1, step=100
-    )
-    num_cores = st.number_input(
-        questions["Server Energy and Carbon"][3], min_value=1, step=50
-    )
+    num_servers = st.number_input(questions["Server Energy and Carbon"][0], min_value=1, step=1)
+    avg_cpus = st.number_input(questions["Server Energy and Carbon"][1], min_value=1, step=1)
+    memory_input = st.number_input(questions["Server Energy and Carbon"][2], min_value=1, step=100)
+    num_cores = st.number_input(questions["Server Energy and Carbon"][3], min_value=1, step=50)
 
 # Add a vertical separator line
 with separator:
     st.markdown(
-        "<style>div.separator { height: 40vh; border-left: 1px solid #4b7170; margin-left: auto; margin-right: auto; }</style>"
-        "<div class='separator'></div>",
+        "<style>div.separator { height: 40vh; border-left: 1px solid #4b7170; margin-left: auto; margin-right: auto; }</style>" "<div class='separator'></div>",
         unsafe_allow_html=True,
     )
 
@@ -363,9 +339,11 @@ if st.button("Calculate Carbon Emission"):
         ).json()
 
         # Reverse the log transformation to get the actual carbon emission
-        carbon_emission_pred_xgb = np.exp(response["carbon"])
+        carbon_emission_pred_xgb = np.exp(response["prediction"])
 
-    except requests.exceptions.RequestException:
+    except Exception as e:
+        logger.error(f"API request failed: {e}. Using local model instead.")
+
         # Load the trained XGBoost model from the file
         def load_cloud_model():
             with open("xgb_carbon_model.pkl", "rb") as file:
@@ -380,9 +358,7 @@ if st.button("Calculate Carbon Emission"):
     # Prepare the input data for electricity prediction
     ###################################################
 
-    input_data2 = pd.DataFrame(
-        {"Memory (GB)": [memory_input], "# Cores": [num_cores], "# Chips": [avg_cpus]}
-    )
+    input_data2 = pd.DataFrame({"Memory (GB)": [memory_input], "# Cores": [num_cores], "# Chips": [avg_cpus]})
 
     ######################
     # Step1: IT Electricity
@@ -391,14 +367,14 @@ if st.button("Calculate Carbon Emission"):
     ##### may need to Change ######
     try:
         response_server = requests.post(
-            "http://localhost:8000/ml/carbon-emissions",
+            "http://localhost:8000/ml/it-electricity",
             json={
-                "Memory (GB)": memory_input,
-                "# Cores": num_cores,
-                "# Chips": avg_cpus,
+                "memory": memory_input,
+                "cores": num_cores,
+                "cpu": avg_cpus,
             },
         ).json()
-        server_pred_rf = response_server["Average watts @ 50% of target load"]
+        server_pred_rf = response_server["prediction"]
 
     except requests.exceptions.RequestException:
         # Load the trained random forest model from the file
@@ -418,16 +394,18 @@ if st.button("Calculate Carbon Emission"):
     ##### may need to Change ######
     try:
         response_idle = requests.post(
-            "http://localhost:8000/ml/carbon-emissions",
+            "http://localhost:8000/ml/active-idle",
             json={
-                "Memory (GB)": memory_input,
-                "# Cores": num_cores,
-                "# Chips": avg_cpus,
+                "memory": memory_input,
+                "cores": num_cores,
+                "cpu": avg_cpus,
             },
         ).json()
-        idle_pred_rf = response_idle["Average watts @ active idle"]
+        idle_pred_rf = response_idle["prediction"]
 
-    except requests.exceptions.RequestException:
+    except Exception as e:
+        logger.error(f"API request failed: {e}. Using local model instead.")
+
         # Load the trained random forest model from the file
         def load_idle_model():
             with open("rf_activeidle_model.pkl", "rb") as file:
@@ -453,21 +431,22 @@ if st.button("Calculate Carbon Emission"):
     ###################################################
 
     # Prepare raw input data as required by the pipeline (without manual encoding)
-    input_data3 = pd.DataFrame(
-        {"Cooling System": [chiller_type], "state_name": [location]}
-    )
+    input_data3 = pd.DataFrame({"Cooling System": [chiller_type], "state_name": [location]})
 
     json_data = input_data3.to_dict(orient="records")[0]
+    logger.debug(json_data)
 
     # Attempt prediction via API, fallback to local model if API fails
     try:
         response_pue = requests.post(
-            "http://localhost:8000/ml/carbon-emissions",
+            "http://localhost:8000/ml/pue",
             json=json_data,
         ).json()
-        pue_pred = response_pue["PUE"]
+        pue_pred = response_pue["prediction"]
 
-    except requests.exceptions.RequestException:
+    except Exception as e:
+        logger.error(f"API request failed: {e}. Using local model instead.")
+
         # Load the trained pipeline model from the file
         def load_cloud_model():
             with open("xgb_pue_sklearn.pkl", "rb") as file:
@@ -485,9 +464,7 @@ if st.button("Calculate Carbon Emission"):
     ###################################################
 
     # Calculate the total carbon emission
-    total_carbon_emission = (
-        pue_pred * server_pred_rf * num_servers + carbon_emission_pred_xgb
-    )
+    total_carbon_emission = pue_pred * server_pred_rf * num_servers + carbon_emission_pred_xgb
 
     # Placeholder for typing effect and counting effect on the same line
     combined_placeholder = st.empty()
@@ -497,9 +474,7 @@ if st.button("Calculate Carbon Emission"):
     typed_text = ""
     for char in text:
         typed_text += char
-        combined_placeholder.markdown(
-            f"<h4 style='color: #3b8bc2;'>{typed_text}</h4>", unsafe_allow_html=True
-        )
+        combined_placeholder.markdown(f"<h4 style='color: #3b8bc2;'>{typed_text}</h4>", unsafe_allow_html=True)
         time.sleep(0.01)  # Adjust for typing speed
 
     # Counting effect for the total emission value
@@ -529,9 +504,7 @@ if st.button("Calculate Carbon Emission"):
         max_emission = 1000000  # Upper end for a large hyperscale data center
 
         # Create a gradient color map from green to orange
-        cmap = mcolors.LinearSegmentedColormap.from_list(
-            "emission_cmap", ["green", "orange", "red"]
-        )
+        cmap = mcolors.LinearSegmentedColormap.from_list("emission_cmap", ["green", "orange", "red"])
 
         # Create the figure and axes
         fig, ax = plt.subplots(figsize=(10, 0.82))
@@ -597,14 +570,13 @@ if st.button("Calculate Carbon Emission"):
             "Predicted Cloud Carbon Emission kgCO2",
             millify(carbon_emission_pred_xgb, precision=2),
         )
-        cols[1].metric("Predicted Annual Total Energy per Server Watts", server_pred_rf)
+        cols[1].metric("Predicted Annual Total Energy per Server Watts", millify(server_pred_rf, 2))
         cols[2].metric("Predicted PUE:", millify(pue_pred, precision=2))
 
     # Add a vertical separator line
     with separator:
         st.markdown(
-            "<style>div.separator { height: 28vh; border-left: 1px solid #4b7170; margin-left: auto; margin-right: auto; }</style>"
-            "<div class='separator'></div>",
+            "<style>div.separator { height: 28vh; border-left: 1px solid #4b7170; margin-left: auto; margin-right: auto; }</style>" "<div class='separator'></div>",
             unsafe_allow_html=True,
         )
 
@@ -615,15 +587,11 @@ if st.button("Calculate Carbon Emission"):
         equivalent_miles = total_carbon_emission * miles_per_kg_co2
 
         # Calculate interpretation: household power equivalent
-        daily_household_kg_co2 = (
-            18  # Approximate daily CO₂ footprint for a typical household in kg
-        )
+        daily_household_kg_co2 = 18  # Approximate daily CO₂ footprint for a typical household in kg
         equivalent_household_days = total_carbon_emission / daily_household_kg_co2
 
         # Calculate interpretation: tree sequestration equivalent
-        annual_tree_sequestration_kg_co2 = (
-            22  # Approximate CO₂ absorbed by a tree per year in kg
-        )
+        annual_tree_sequestration_kg_co2 = 22  # Approximate CO₂ absorbed by a tree per year in kg
         equivalent_trees = total_carbon_emission / annual_tree_sequestration_kg_co2
 
         # Display the interpretation
@@ -644,23 +612,3 @@ if st.button("Calculate Carbon Emission"):
         """,
             unsafe_allow_html=True,
         )
-
-
-###################################################
-# Recommendation
-###################################################
-
-# Horizontal line
-# st.markdown("<hr>", unsafe_allow_html=True)
-
-# st.write(
-# "<h3 style='color: #4b7170;font-style: italic;'>Get Your Personalized Recommendations</h3>",
-# unsafe_allow_html=True,)
-
-# Output Recommendation
-# if st.button("Get Recommendations"):
-# Display the recommendations
-# st.write("#### we recommend...")
-
-# Horizontal line
-# st.markdown("<hr>", unsafe_allow_html=True)

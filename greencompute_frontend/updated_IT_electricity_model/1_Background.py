@@ -1,9 +1,9 @@
-import streamlit as st
-import pandas as pd
-import altair as alt
 import base64
-import streamlit.components.v1 as components
 
+import altair as alt
+import pandas as pd
+import streamlit as st
+import streamlit.components.v1 as components
 
 # Paths to the logos
 logo = "./images/logo4.png"
@@ -91,9 +91,7 @@ st.markdown(
 )
 
 # Overview
-st.write(
-    "##### Data centers are critical infrastructure that significantly contribute to global carbon emissions. Operators lack effective tools to track, manage, and optimize their carbon footprint."
-)
+st.write("##### Data centers are critical infrastructure that significantly contribute to global carbon emissions. Operators lack effective tools to track, manage, and optimize their carbon footprint.")
 
 ################################
 # Data Visualization

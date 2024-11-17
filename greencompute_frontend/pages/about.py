@@ -1,5 +1,6 @@
-import streamlit as st
 import base64
+
+import streamlit as st
 
 # Paths to the logos
 logo = "./images/logo4.png"
@@ -74,9 +75,7 @@ st.markdown(
 )
 
 # Customizing the title with HTML/CSS to make it larger and green
-st.markdown(
-    "<h1 style='color: #4b7170;font-size: 60px;'>About Us</h1>", unsafe_allow_html=True
-)
+st.markdown("<h1 style='color: #4b7170;font-size: 60px;'>About Us</h1>", unsafe_allow_html=True)
 
 
 # Define group members

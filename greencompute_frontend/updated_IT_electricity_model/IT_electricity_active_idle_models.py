@@ -1,42 +1,27 @@
 ###IT Electricity model###
 # Import necessary libraries
-import pandas as pd
 import pickle
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 
+import pandas as pd
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from sklearn.model_selection import train_test_split
 
 # load data
-power_ssj_df = pd.read_csv(
-    "power_ssj2008-results-20240912-193753.csv", encoding="ISO-8859-1"
-)
+power_ssj_df = pd.read_csv("power_ssj2008-results-20240912-193753.csv", encoding="ISO-8859-1")
 
 # Clean column names by removing trailing spaces and special characters
-power_ssj_df.columns = power_ssj_df.columns.str.strip().str.replace(
-    r"\t", "", regex=True
-)
+power_ssj_df.columns = power_ssj_df.columns.str.strip().str.replace(r"\t", "", regex=True)
 
 # Performance per core
-power_ssj_df["Performance per core @ 50% of target load"] = (
-    power_ssj_df["ssj_ops @ 50% of target load"] / power_ssj_df["# Cores"]
-)
+power_ssj_df["Performance per core @ 50% of target load"] = power_ssj_df["ssj_ops @ 50% of target load"] / power_ssj_df["# Cores"]
 
 # Power efficiency #units = performance per watt
-power_ssj_df["Power efficiency @ 50% of target load"] = (
-    power_ssj_df["ssj_ops @ 50% of target load"]
-    / power_ssj_df["Average watts @ 50% of target load"]
-)
+power_ssj_df["Power efficiency @ 50% of target load"] = power_ssj_df["ssj_ops @ 50% of target load"] / power_ssj_df["Average watts @ 50% of target load"]
 
 # Memory efficiency
-power_ssj_df["Memory (GB)"] = power_ssj_df["Memory (GB)"].str.replace(
-    r"[^\d.]+", "", regex=True
-)
-power_ssj_df["Memory (GB)"] = pd.to_numeric(
-    power_ssj_df["Memory (GB)"], errors="coerce"
-)
-power_ssj_df["Memory efficiency @ 50% of target load"] = (
-    power_ssj_df["Memory (GB)"] / power_ssj_df["ssj_ops @ 50% of target load"]
-)
+power_ssj_df["Memory (GB)"] = power_ssj_df["Memory (GB)"].str.replace(r"[^\d.]+", "", regex=True)
+power_ssj_df["Memory (GB)"] = pd.to_numeric(power_ssj_df["Memory (GB)"], errors="coerce")
+power_ssj_df["Memory efficiency @ 50% of target load"] = power_ssj_df["Memory (GB)"] / power_ssj_df["ssj_ops @ 50% of target load"]
 
 # Cores per memory
 power_ssj_df["Cores per memory"] = power_ssj_df["# Cores"] / power_ssj_df["Memory (GB)"]
@@ -53,9 +38,7 @@ X = power_ssj_df[["Memory (GB)", "# Cores", "# Chips"]]
 y = power_ssj_df["Average watts @ 50% of target load"]
 
 # split the data
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Initialize the model
 gb_model = GradientBoostingRegressor(n_estimators=100, random_state=42)
@@ -74,9 +57,7 @@ X = power_ssj_df[["Memory (GB)", "# Cores", "# Chips"]]
 y = power_ssj_df["Average watts @ active idle"]
 
 # split the data
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # initialize the model
 rf_model = RandomForestRegressor(n_estimators=100, random_state=42)

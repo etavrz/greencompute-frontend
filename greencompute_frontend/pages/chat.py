@@ -1,8 +1,9 @@
+import base64
 import json
 import time
-import base64
-import streamlit as st
+
 import requests
+import streamlit as st
 
 logo = "./images/logo4.png"
 
@@ -87,9 +88,7 @@ def stream_llm_response(query, chunk_size=10):
         "prompt": "cite",
     }
 
-    with requests.post(
-        url, headers=headers, data=json.dumps(payload), stream=True
-    ) as response:
+    with requests.post(url, headers=headers, data=json.dumps(payload), stream=True) as response:
         if response.status_code == 200:
             # Stream the response content
             for line in response.iter_lines(chunk_size=chunk_size):

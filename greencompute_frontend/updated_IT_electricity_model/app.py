@@ -1,10 +1,10 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
 import base64
-import requests
 import pickle
 
+import numpy as np
+import pandas as pd
+import requests
+import streamlit as st
 
 # Paths to the logos
 logo = "./images/logo4.png"
@@ -108,9 +108,7 @@ if st.button("How we make our predictions"):
 # Display the image based on the state
 if st.session_state.show_image:
     st.image("./images/data_model_simple.png", width=800)
-    st.write(
-        "Formula: Total Carbon Emission = PUE * Server Electricity Consumption + Cloud Carbon Emission"
-    )
+    st.write("Formula: Total Carbon Emission = PUE * Server Electricity Consumption + Cloud Carbon Emission")
 
 # Define possible categories for dummies
 chiller_economizer = [
@@ -239,25 +237,15 @@ st.write(
 server_col1, server_col2, server_col3 = st.columns(3)
 
 with server_col1:
-    num_servers = st.number_input(
-        questions["Server Energy and Carbon"][0], min_value=0, step=1
-    )
-    avg_cpus = st.number_input(
-        questions["Server Energy and Carbon"][1], min_value=0, step=1
-    )
+    num_servers = st.number_input(questions["Server Energy and Carbon"][0], min_value=0, step=1)
+    avg_cpus = st.number_input(questions["Server Energy and Carbon"][1], min_value=0, step=1)
 
 with server_col2:
-    memory_input = st.number_input(
-        questions["Server Energy and Carbon"][2], min_value=0, step=100
-    )
-    num_chips = st.number_input(
-        questions["Server Energy and Carbon"][3], min_value=0, step=50
-    )
+    memory_input = st.number_input(questions["Server Energy and Carbon"][2], min_value=0, step=100)
+    num_chips = st.number_input(questions["Server Energy and Carbon"][3], min_value=0, step=50)
 
 with server_col3:
-    num_cores = st.number_input(
-        questions["Server Energy and Carbon"][4], min_value=0, step=50
-    )
+    num_cores = st.number_input(questions["Server Energy and Carbon"][4], min_value=0, step=50)
 
 
 # Add a horizontal line separator
@@ -354,9 +342,7 @@ if st.button("Calculate Carbon Emission"):
     # Prepare the input data for electricity prediction
     ###################################################
 
-    input_data2 = pd.DataFrame(
-        {"Memory (GB)": [memory_input], "# Cores": [num_cores], "# Chips": [num_chips]}
-    )
+    input_data2 = pd.DataFrame({"Memory (GB)": [memory_input], "# Cores": [num_cores], "# Chips": [num_chips]})
 
     ######################
     # Step1: IT Electricity
@@ -426,9 +412,7 @@ if st.button("Calculate Carbon Emission"):
     # Predict PUE
     ###################################################
 
-    chiller_economizer_input = determine_combination(
-        chiller_type, air_economization, water_economization
-    )
+    chiller_economizer_input = determine_combination(chiller_type, air_economization, water_economization)
     input_data3 = pd.DataFrame(columns=chiller_economizer + states)
 
     # Create a row of zeros
@@ -463,9 +447,7 @@ if st.button("Calculate Carbon Emission"):
     # Output
     ###################################################
 
-    total_carbon_emission = (
-        pue_pred * server_pred_rf * num_servers + carbon_emission_pred_xgb
-    )
+    total_carbon_emission = pue_pred * server_pred_rf * num_servers + carbon_emission_pred_xgb
     st.write(
         f"<h4 style='color: #3b8bc2;'>The carbon footprint of your data center is {total_carbon_emission:.2f} kgCO2 </h4>",
         unsafe_allow_html=True,
@@ -476,15 +458,11 @@ if st.button("Calculate Carbon Emission"):
 
     # Column 1: Predicted Cloud Carbon Emission
     with col1:
-        st.write(
-            f"Predicted Cloud Carbon Emission: {carbon_emission_pred_xgb:.2f} kgCO2"
-        )
+        st.write(f"Predicted Cloud Carbon Emission: {carbon_emission_pred_xgb:.2f} kgCO2")
 
     # Column 2: Predicted IT Server Electricity Consumption
     with col2:
-        st.write(
-            f"Predicted Annual Total Energy per Server: {server_pred_rf:.2f} Watts"
-        )
+        st.write(f"Predicted Annual Total Energy per Server: {server_pred_rf:.2f} Watts")
 
     # Column 3: Predicted PUE
     with col3:

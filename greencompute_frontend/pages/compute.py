@@ -425,7 +425,7 @@ if st.button("Calculate Carbon Emission"):
 
     # Annual Total Energy
     # Updated to multiply by number of servers here
-    annual_total_energy = annual_average_power * 8760 * 1.05 * 1.20 * num_servers
+    annual_total_energy = annual_average_power * 8760 * 1.05 * 1.20 * num_servers / 1000
 
     ###################################################
     # Predict PUE
@@ -572,7 +572,7 @@ if st.button("Calculate Carbon Emission"):
             "Predicted Cloud Carbon Emission kgCO2",
             millify(carbon_emission_pred_xgb, precision=2),
         )
-        cols[1].metric("Predicted Annual Total Energy per Server Watts", millify(server_pred_rf, 2))
+        cols[1].metric("Predicted Annual Total Energy (kWh)", millify(annual_total_energy, 2))
         cols[2].metric("Predicted PUE:", millify(pue_pred, precision=2))
 
     # Add a vertical separator line

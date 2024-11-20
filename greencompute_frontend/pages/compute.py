@@ -424,7 +424,8 @@ if st.button("Calculate Carbon Emission"):
     annual_average_power = 0.3 * server_pred_rf + 0.7 * idle_pred_rf
 
     # Annual Total Energy
-    annual_total_energy = annual_average_power * 8760 * 1.05 * 1.20
+    # Updated to multiply by number of servers here
+    annual_total_energy = annual_average_power * 8760 * 1.05 * 1.20 * num_servers
 
     ###################################################
     # Predict PUE
@@ -464,7 +465,8 @@ if st.button("Calculate Carbon Emission"):
     ###################################################
 
     # Calculate the total carbon emission
-    total_carbon_emission = pue_pred * server_pred_rf * num_servers + carbon_emission_pred_xgb
+    # Placeholder value of 0.86 lbCO2/kWh
+    total_carbon_emission = annual_total_energy * 0.86 * 0.455 + carbon_emission_pred_xgb
 
     # Placeholder for typing effect and counting effect on the same line
     combined_placeholder = st.empty()

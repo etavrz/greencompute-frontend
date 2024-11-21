@@ -1,6 +1,0 @@
-[server]
-port=8501 # change port number. By default streamlit uses 8501 port
-headless=true
-
-[browser] # This ip and port will show in command prompt
-serverPort = 8501

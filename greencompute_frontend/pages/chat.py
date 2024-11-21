@@ -98,7 +98,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # React to user input
-if prompt := st.chat_input("What is up?"):
+if prompt := st.chat_input("What can we help with?"):
     # User message
     with st.chat_message("user"):
         st.markdown(prompt)

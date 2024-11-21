@@ -1,77 +1,17 @@
-import base64
 import json
 import time
 
 import requests
 import streamlit as st
 
-logo = "./images/logo4.png"
+import greencompute_frontend.formatting as fmt
 
-
-# mainly composed from https://docs.streamlit.io/develop/tutorials/llms/build-conversational-apps#introduction
-def add_logo(logo, width):
-    # Read the image and convert it to Base64
-    with open(logo, "rb") as f:
-        data = base64.b64encode(f.read()).decode("utf-8")
-
-    # Inject CSS with Base64-encoded image into the sidebar
-    st.markdown(
-        f"""
-        <style>
-            [data-testid="stSidebarNav"] {{
-                background-image: url("data:image/png;base64,{data}");
-                background-repeat: no-repeat;
-                padding-top: 150px;
-                background-position: 10px 10px;
-                background-size: {width};
-            }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-# Call the add_logo function with the path to your local image
-add_logo(logo, "200px")
-
-st.markdown(
-    """
-    <style>
-    /* Style for the sidebar content */
-    [data-testid="stSidebarContent"] {
-        background-color: white; /*#bac9b9; Sidebar background color */
-    }
-    /* Set color for all text inside the sidebar */
-    [data-testid="stSidebar"] * {
-        color: #3b8bc2 !important;  /* Text color */
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# Change the background color
-st.markdown(
-    """
-    <style>
-    .stApp {
-        background-color: #d2e7ae;  /* #c0dc8f Light gray-green */
-    }
-    .custom-label{
-        color: #3b8bc2;
-        font-size: 18px;  /* Set the font size for text input, number input, and text area */
-        padding: 10px;    /* Optional: adjust padding for better appearance */
-    }
-    p, li, span{
-        color: #4b7170;
-        font-size: 18px;  /* Set default font size */
-        /* font-weight: bold;   Make the text bold */
-    }
-
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# Apply different formatting events
+logo = "./greencompute_frontend/images/logo4.png"
+fmt.add_logo(logo)
+fmt.sidebar()
+fmt.background()
+fmt.title("GreenCompute Chat")
 
 
 def stream_llm_response(query, chunk_size=10):
@@ -140,9 +80,6 @@ def llm_response(query: str, context_size: int = 20):
     for word in response_str.split(" "):
         yield word + " "
         time.sleep(0.08)
-
-
-st.title("GreenCompute Chat")
 
 
 def chat_response(query: str):

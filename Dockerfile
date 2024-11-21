@@ -11,21 +11,26 @@ RUN apt-get update \
         libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 ENV POETRY_VERSION=1.7.1
+ENV POETRY_VIRTUALENVS_IN_PROJECT=true
+ENV POETRY_HOME "/opt/poetry"
+ENV PATH "$POETRY_HOME/bin:$PATH"
 RUN curl -sSL https://install.python-poetry.org | python3 -
-ENV PATH=/root/.local/bin:$PATH
 
 # Set the working directory and copy the installation files
-WORKDIR /app
-COPY pyproject.toml poetry.lock ./
+WORKDIR /opt/greencompute_frontend
+COPY greencompute_frontend ./greencompute_frontend
+COPY pyproject.toml poetry.lock README.md ./
 
 # Create the virtual environment and install dependencies
-RUN python -m venv --copies /app/venv
-RUN . /app/venv/bin/activate && poetry install --only main
+RUN poetry install --only main
 
 #############
 # Deployment image
 #############
 FROM python:3.11-slim AS prod
+ENV PATH "/opt/greencompute_frontend/.venv/bin:$PATH"
+
+WORKDIR /opt/greencompute_frontend
 
 # Install curl to run healthcheck
 RUN apt-get update \
@@ -33,12 +38,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the virtual environment from the builder stage
-COPY --from=builder /app/venv /app/venv/
-ENV PATH /app/venv/bin:$PATH
-
-# Set the working directory and copy the source code
-WORKDIR /app
-COPY . /app
+COPY --from=builder /opt/greencompute_frontend /opt/greencompute_frontend
 
 EXPOSE 8501
 

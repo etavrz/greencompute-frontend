@@ -24,7 +24,7 @@ def stream_llm_response(query, chunk_size=10):
         "stop_sequences": [],
         "temperature": 0.7,
         "top_p": 0.8,
-        "top_k": 10,
+        "top_n": 20,
         "prompt": "cite",
     }
 
@@ -56,11 +56,11 @@ def llm_response(query: str, context_size: int = 20):
     payload = {
         "body": query,
         "llm_id": "amazon.titan-text-premier-v1:0",
-        "max_tokens": 512,
+        "max_tokens": 1024,
         "stop_sequences": [],
-        "temperature": 0.7,
-        "top_p": 0.8,
-        "top_k": context_size,
+        "temperature": 0.3,
+        "top_p": 0.7,
+        "top_n": context_size,
         "prompt": "cite",
     }
 

@@ -11,13 +11,14 @@ from loguru import logger
 from millify import millify
 
 import greencompute_frontend.formatting as fmt
+from greencompute_frontend.constants import STATES
 
 # Apply different formatting events
 logo = "./greencompute_frontend/images/logo4.png"
 fmt.add_logo(logo)
 fmt.sidebar()
 fmt.background()
-fmt.title("About Us")
+fmt.title("GreenCompute")
 
 
 st.write(
@@ -55,11 +56,7 @@ text_placeholder = st.empty()
 if st.session_state.show_text_once:
     # Typing effect for the text
     text = "Enter your data center's Server Electricity Consumption, Embodied Carbon, and Power Usage Efficiency (PUE) details to generate a carbon emissions prediction."
-    typed_text = ""
-    for char in text:
-        typed_text += char
-        text_placeholder.markdown(f"<h4 style='color: #3b8bc2;'>{typed_text}</h4>", unsafe_allow_html=True)
-        time.sleep(0.01)  # Adjust for typing speed
+    text_placeholder.markdown(f"<h4 style='color: #3b8bc2;'>{text}</h4>", unsafe_allow_html=True)
 
     # Set the session state to prevent showing it again
     st.session_state.show_text_once = False
@@ -99,60 +96,6 @@ def determine_combination(chiller_type, economization):
         return "Waterside economizer + (water-cooled chiller)"
     else:
         return chiller_type
-
-
-states = [
-    "Alabama",
-    "Alaska",
-    "Arizona",
-    "Arkansas",
-    "California",
-    "Colorado",
-    "Connecticut",
-    "Delaware",
-    "Florida",
-    "Georgia",
-    "Hawaii",
-    "Idaho",
-    "Illinois",
-    "Indiana",
-    "Iowa",
-    "Kansas",
-    "Kentucky",
-    "Louisiana",
-    "Maine",
-    "Maryland",
-    "Massachusetts",
-    "Michigan",
-    "Minnesota",
-    "Mississippi",
-    "Missouri",
-    "Montana",
-    "Nebraska",
-    "Nevada",
-    "New Hampshire",
-    "New Jersey",
-    "New Mexico",
-    "New York",
-    "North Carolina",
-    "North Dakota",
-    "Ohio",
-    "Oklahoma",
-    "Oregon",
-    "Pennsylvania",
-    "Rhode Island",
-    "South Carolina",
-    "South Dakota",
-    "Tennessee",
-    "Texas",
-    "Utah",
-    "Vermont",
-    "Virginia",
-    "Washington",
-    "West Virginia",
-    "Wisconsin",
-    "Wyoming",
-]
 
 
 ###########################
@@ -228,7 +171,7 @@ with server_col2:
         questions["PUE Model"][1],
         ["Water-side Economization", "Air-side Economization"],
     )
-    location = st.selectbox(questions["PUE Model"][0], states)
+    location = st.selectbox(questions["PUE Model"][0], STATES)
     chiller_type = st.selectbox(
         questions["PUE Model"][2],
         ["Air-cooled chiller", "Direct expansion system", "Water-cooled chiller"],
@@ -240,7 +183,7 @@ with server_col2:
 ###########################
 
 # Create a DataFrame for dummy variables
-input_data_pue = pd.DataFrame(columns=chiller_economizer + states)
+input_data_pue = pd.DataFrame(columns=chiller_economizer + STATES)
 
 # Create a row of zeros
 input_data_pue.loc[0] = 0

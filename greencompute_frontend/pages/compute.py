@@ -1,3 +1,5 @@
+import datetime
+import json
 import pickle
 import time
 
@@ -349,7 +351,7 @@ if st.button("Calculate Carbon Emission"):
     typed_text = ""
     for char in text:
         typed_text += char
-        combined_placeholder.markdown(f"<h4 style='color: #3b8bc2;'>{typed_text}</h4>", unsafe_allow_html=True)
+        combined_placeholder.markdown(f"<h3 style='color: #3b8bc2;'>{typed_text}</h3>", unsafe_allow_html=True)
         time.sleep(0.01)  # Adjust for typing speed
 
     # Counting effect for the total emission value
@@ -360,10 +362,14 @@ if st.button("Calculate Carbon Emission"):
     while current_value < final_value:
         current_value = min(current_value + increment, final_value)
         combined_placeholder.markdown(
-            f"<h4 style='color: #3b8bc2;'>{typed_text}{current_value:.2f} kgCO₂</h4>",
+            f"<h3 style='color: #3b8bc2;'>{typed_text}{current_value:.2f} kgCO₂</h3>",
             unsafe_allow_html=True,
         )
-        time.sleep(0.02)  # Adjust for counting speed
+        time.sleep(0.01)  # Adjust for counting speed
+
+    # Add a horizontal line separator
+    empty_line_placeholder = st.empty()
+    empty_line_placeholder.markdown("<p style='margin-top: 20px;'></p>", unsafe_allow_html=True)
 
     # Use three columns for inputs in the Server Energy and Carbon section
     col1, separator, col2 = st.columns([2.2, 0.1, 2.2])
@@ -383,6 +389,10 @@ if st.button("Calculate Carbon Emission"):
 
         # Create the figure and axes
         fig, ax = plt.subplots(figsize=(10, 0.82))
+
+        # Replace with your desired color
+        background_color = "#d2e7ae"
+        fig.patch.set_facecolor(background_color)
 
         # Generate data points for the spectrum (x-axis)
         x = np.linspace(min_emission, max_emission, 500)
@@ -408,7 +418,7 @@ if st.button("Calculate Carbon Emission"):
             f"Small DC\n({min_emission} kgCO₂)",
             ha="center",
             color="green",
-            fontsize=15,
+            fontsize=16,
         )
         ax.text(
             max_emission,
@@ -416,7 +426,7 @@ if st.button("Calculate Carbon Emission"):
             f"Hyperscale DC\n({max_emission} kgCO₂)",
             ha="center",
             color="red",
-            fontsize=15,
+            fontsize=16,
         )
 
         # Label the prediction line
@@ -426,7 +436,8 @@ if st.button("Calculate Carbon Emission"):
             f"{total_carbon_emission:.2f} kgCO₂",
             ha="center",
             color="#3b8bc2",
-            fontsize=15,
+            fontsize=18,
+            weight="bold",
         )
 
         # Hide the y-axis and spines for a cleaner look
@@ -436,17 +447,52 @@ if st.button("Calculate Carbon Emission"):
         st.pyplot(fig)
 
         # Add a horizontal line separator
-        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("<hr style='margin-top: 10px; margin-bottom: 10px;'>", unsafe_allow_html=True)
 
+        ####################
         # Prediction reulsts
+        ####################
+
         cols = st.columns(3)
 
-        cols[0].metric(
-            "Predicted Cloud Carbon Emission kgCO2",
-            millify(carbon_emission_pred_xgb, precision=2),
-        )
-        cols[1].metric("Predicted Annual Total Energy (kWh)", millify(annual_total_energy, 2))
-        cols[2].metric("Predicted PUE:", millify(pue_pred, precision=2))
+        with cols[0]:
+            st.markdown(
+                f"""
+                <div style="font-size: 18px; color: #4b7170; font-style: italic;font-weight: bold;">
+                    Predicted Embodied Carbon:<br>
+                    <span style="font-size: 28px; color: #3b8bc2;font-weight: bold;">
+                        {millify(carbon_emission_pred_xgb, 2)} (kgCO₂)
+                    </span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        with cols[1]:
+            st.markdown(
+                f"""
+                <div style="font-size: 18px; color: #4b7170; font-style: italic;font-weight: bold;">
+                    Predicted Annual Total Energy:<br>
+                    <span style="font-size: 28px; color: #3b8bc2;font-weight: bold;">
+                        {millify(annual_total_energy, 2)} (kWh)
+                    </span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        with cols[2]:
+            st.markdown(
+                f"""
+                <div style="font-size: 18px; color: #4b7170; font-style: italic;font-weight: bold;">
+                    Predicted PUE:<br>
+                    <span style="font-size: 28px; color: #3b8bc2;font-weight: bold;">
+                        {millify(pue_pred, precision=2)}
+                    </span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
     # Add a vertical separator line
     with separator:
@@ -471,7 +517,7 @@ if st.button("Calculate Carbon Emission"):
 
         # Display the interpretation
         st.write(
-            "<h4 style='color: #3b8bc2;'>🌍 Equivalent Carbon Emissions 🌍</h4>",
+            "<h4 style='color: #4b7170;'>🌍 Equivalent Carbon Emissions 🌍</h4>",
             unsafe_allow_html=True,
         )
         st.markdown(
@@ -487,3 +533,30 @@ if st.button("Calculate Carbon Emission"):
         """,
             unsafe_allow_html=True,
         )
+
+    # Output
+    output_data = {
+        "Number of Servers": num_servers,
+        "Average CPUs": avg_cpus,
+        "Average Memory (GB)": memory_input,
+        "Number of Cores": num_cores,
+        "Cooling System": chiller_type,
+        "Location": location,
+        "Air-side Economization": economization,
+        "Total Emission (kgCO₂)": round(total_carbon_emission, 2),
+        "Predicted Embodied Carbon": round(carbon_emission_pred_xgb, 2),
+        "Predicted Annual Total Energy": round(annual_total_energy, 2),
+        "Predicted PUE": round(pue_pred, 2),
+        "Time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+    # Convert values that are of numpy 32 to floats and keep the rest as is
+    output_data = {k: v.item() if isinstance(v, np.float32) else v for k, v in output_data.items()}
+
+    json_string = json.dumps(output_data, indent=4)
+    st.download_button(
+        label="Save Results",
+        file_name=f"greencompute_results_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.json",
+        mime="application/json",
+        data=json_string,
+    )

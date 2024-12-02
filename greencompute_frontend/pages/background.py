@@ -1,48 +1,18 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
 import altair as alt
-import base64
+import pandas as pd
+import streamlit as st
 import streamlit.components.v1 as components
 
+import greencompute_frontend.formatting as fmt
 
 # Paths to the logos
-logo = "./images/logo4.png"
-
-st.set_page_config(page_title="Compute", layout="wide")
-
-###########################
-# Add LOGO
-###########################
-def add_logo(logo, width):
-    # Read the image and convert it to Base64
-    with open(logo, "rb") as f:
-        data = base64.b64encode(f.read()).decode("utf-8")
-
-    # Inject CSS with Base64-encoded image into the sidebar
-    st.markdown(
-        f"""
-        <style>
-            [data-testid="stSidebarNav"] {{
-                background-image: url("data:image/png;base64,{data}");
-                background-repeat: no-repeat;
-                padding-top: 150px;
-                background-position: 10px 10px;
-                background-size: {width};
-            }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-# Call the add_logo function with the path to your local image
-add_logo(logo, "200px")
-
+logo = "./greencompute_frontend/images/logo4.png"
+fmt.add_logo(logo)
 
 df = pd.read_csv("./Cloud Carbon Footprint - Embodied Emissions.csv")
 
 # Rename columns
-df.columns = ['series', 'vm', 'CPU', 'memory', 'carbon_emission', 'carbon_emission2']
+df.columns = ["series", "vm", "CPU", "memory", "carbon_emission", "carbon_emission2"]
 
 st.markdown(
     """
@@ -57,7 +27,7 @@ st.markdown(
     }
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 
@@ -78,7 +48,7 @@ st.markdown(
         font-size: 18px;  /* Set default font size */
         /* font-weight: bold;   Make the text bold */
     }
-    
+
     </style>
     """,
     unsafe_allow_html=True,
@@ -97,10 +67,10 @@ st.markdown("<hr>", unsafe_allow_html=True)
 st.write(
     "<h3 style='color: #4b7170;font-style: italic;'>About GreenCompute</h3>",
     unsafe_allow_html=True,
-) 
+)
 
 st.markdown(
-            f"""
+    """
 GreenCompute is dedicated to addressing the critical environmental challenge of carbon emissions in data centers. Data centers, essential to our digital infrastructure, consume massive amounts of electricity to power servers and cooling systems. These facilities contribute to carbon emissions that are classified into three categories:
 
 •  Scope 1: Direct emissions from on-site fuel combustion, such as backup generators.\\
@@ -113,7 +83,9 @@ Carbon Emission Prediction – Leveraging three advanced sub-models, we predict 
 Energy Efficiency Recommendations – Our LLM-powered chatbot delivers tailored guidance to optimize energy use and reduce emissions, helping companies improve efficiency and sustainability.
 
 By providing clear visibility into carbon emissions and actionable pathways for reduction, GreenCompute supports businesses in meeting sustainability goals while addressing the significant environmental impact of data centers.
- """,unsafe_allow_html=True,)
+ """,
+    unsafe_allow_html=True,
+)
 
 ################################
 # Data Model
@@ -124,8 +96,8 @@ st.markdown("<hr>", unsafe_allow_html=True)
 st.write(
     "<h3 style='color: #4b7170;font-style: italic;'>Data Model</h3>",
     unsafe_allow_html=True,
-)    
-st.image("./images/data_model.png")
+)
+st.image("./greencompute_frontend/images/data_model.png")
 
 ################################
 # Data Visualization
@@ -136,70 +108,72 @@ st.markdown("<hr>", unsafe_allow_html=True)
 st.write(
     "<h3 style='color: #4b7170;font-style: italic;'>Exploratory Data Analysis</h3>",
     unsafe_allow_html=True,
-)  
+)
 
 ### Embodied Carbon ###
 st.write(
     "<h4 style='color: #4b7170;font-style: italic;'>1. Embodied Carbon</h4>",
     unsafe_allow_html=True,
-)    
+)
 
 with st.expander("Click to see the visualization..."):
-
     # Create two columns (left and right)
     col1, col2 = st.columns(2)
 
     # Scatter plot for Column A vs Column B
     with col1:
-        st.write("<h5 style='color: #3b8bc2;font-style: italic;'>Carbon Emission vs. # of CPUs</h5>",
-                 unsafe_allow_html=True,) 
+        st.write(
+            "<h5 style='color: #3b8bc2;font-style: italic;'>Carbon Emission vs. # of CPUs</h5>",
+            unsafe_allow_html=True,
+        )
         scatter_plot = (
             alt.Chart(df)
-            .mark_circle(color='orange')  # Set the color to green
+            .mark_circle(color="orange")  # Set the color to green
             .encode(
-                x='CPU',
-                y='carbon_emission',
-                tooltip=['CPU','carbon_emission']  # Optional: show values on hover
+                x="CPU",
+                y="carbon_emission",
+                tooltip=["CPU", "carbon_emission"],  # Optional: show values on hover
             )
             .properties(width=400, height=300)  # Set plot size
         )
-    
+
         st.altair_chart(scatter_plot, use_container_width=True)
-      
+
     # Scatter plot for Column C vs Column B
     with col2:
-        st.write("<h5 style='color: #3b8bc2;font-style: italic;'> Carbon Emission vs. Memory</h5>",
-                 unsafe_allow_html=True,) 
+        st.write(
+            "<h5 style='color: #3b8bc2;font-style: italic;'> Carbon Emission vs. Memory</h5>",
+            unsafe_allow_html=True,
+        )
         scatter_plot = (
             alt.Chart(df)
-            .mark_circle(color='blue')  # Set the color to green
+            .mark_circle(color="blue")  # Set the color to green
             .encode(
-                x='memory',
-                y='carbon_emission',
-                tooltip=['memory', 'carbon_emission']  # Optional: show values on hover
+                x="memory",
+                y="carbon_emission",
+                tooltip=["memory", "carbon_emission"],  # Optional: show values on hover
             )
             .properties(width=400, height=300)  # Set plot size
         )
-    
+
         st.altair_chart(scatter_plot, use_container_width=True)
-    
+
 ### IT ###
 st.write(
     "<h4 style='color: #4b7170;font-style: italic;'>2. IT Electricity Consumption</h4>",
     unsafe_allow_html=True,
-) 
+)
 
 with st.expander("Click to see the visualization..."):
-    st.image("./images/IT.png", width=600)
+    st.image("./greencompute_frontend/images/IT.png", width=600)
 
 ### PUE ###
 st.write(
     "<h4 style='color: #4b7170;font-style: italic;'>2. Power Usage Effectiveness</h4>",
     unsafe_allow_html=True,
-) 
+)
 
 with st.expander("Click to see the visualization..."):
-
     # Define the URL to the Tableau public visualization
     tableau_url = "https://public.tableau.com/views/PUE_State/Dashboard1"
 
@@ -239,55 +213,51 @@ st.markdown("<hr>", unsafe_allow_html=True)
 st.write(
     "<h3 style='color: #4b7170;font-style: italic;'>Model Performance Metrics</h3>",
     unsafe_allow_html=True,
-)  
+)
 
 col1, col2, col3 = st.columns([1, 1.5, 1])
 
 # Embodied carbon data
-with col1: 
+with col1:
     st.write(
         "<h4 style='color: #3b8bc2;font-style: italic;'>1. Embodied Carbon</h4>",
-        unsafe_allow_html=True,)  
-    data1 = {
-        'Model Type': ['Linear Regression', 'Decision Tree', 'Random Forest', 'XGBoost'],
-        'MSE': [0.23, 0.10, 0.08, 0.06],
-        'R-squared': [0.53, 0.80, 0.83, 0.87]}
-    # Create a DataFrame 
+        unsafe_allow_html=True,
+    )
+    data1 = {"Model Type": ["Linear Regression", "Decision Tree", "Random Forest", "XGBoost"], "MSE": [0.23, 0.10, 0.08, 0.06], "R-squared": [0.53, 0.80, 0.83, 0.87]}
+    # Create a DataFrame
     df1 = pd.DataFrame(data1)
-    df1.set_index('Model Type', inplace=True)
-    st.dataframe(df1) 
+    df1.set_index("Model Type", inplace=True)
+    st.dataframe(df1)
 
 # Embodied carbon data
-with col2: 
+with col2:
     st.write(
         "<h4 style='color: #3b8bc2;font-style: italic;'>2. IT Electricity & Idle Power</h4>",
-        unsafe_allow_html=True,)  
+        unsafe_allow_html=True,
+    )
     data2 = {
-        'Output': ['IT Electricity', 'IT Electricity','IT Electricity', 
-                  'Active Idle Power','Active Idle Power','Active Idle Power'],
-        'Model Type': ['Random Forest', 'Gradient Boosting Regressor', 'Neural Network',
-                       'Random Forest', 'Gradient Boosting Regressor', 'K-NN'],
-        'MSE': [14409.11, 8339.51, 18455.5, 3794.67, 5573.91, 21496.27],
-        'R-squared': [0.96, 0.97, 0.94, 0.92, 0.89, 0.57]}
+        "Output": ["IT Electricity", "IT Electricity", "IT Electricity", "Active Idle Power", "Active Idle Power", "Active Idle Power"],
+        "Model Type": ["Random Forest", "Gradient Boosting Regressor", "Neural Network", "Random Forest", "Gradient Boosting Regressor", "K-NN"],
+        "MSE": [14409.11, 8339.51, 18455.5, 3794.67, 5573.91, 21496.27],
+        "R-squared": [0.96, 0.97, 0.94, 0.92, 0.89, 0.57],
+    }
     # Create a DataFrame
     df2 = pd.DataFrame(data2)
-    df2.set_index('Output', inplace=True)
-    st.dataframe(df2) 
-    
+    df2.set_index("Output", inplace=True)
+    st.dataframe(df2)
+
 # Embodied carbon data
-with col3: 
+with col3:
     st.write(
         "<h4 style='color: #3b8bc2;font-style: italic;'>3. PUE</h4>",
-        unsafe_allow_html=True,)  
-    data3 = {
-        'Model Type': ['Linear Regression', 'Decision Tree', 'Random Forest', 'XGBoost'],
-        'MSE': [0.026, 0.025, 0.025, 0.025],
-        'R-squared': [0.633, 0.644, 0.644, 0.644]}
-    # Create a DataFrame 
+        unsafe_allow_html=True,
+    )
+    data3 = {"Model Type": ["Linear Regression", "Decision Tree", "Random Forest", "XGBoost"], "MSE": [0.026, 0.025, 0.025, 0.025], "R-squared": [0.633, 0.644, 0.644, 0.644]}
+    # Create a DataFrame
     df3 = pd.DataFrame(data3)
-    df3.set_index('Model Type', inplace=True)
-    st.dataframe(df3) 
-    
+    df3.set_index("Model Type", inplace=True)
+    st.dataframe(df3)
+
 ################################
 # Citation
 ################################
@@ -298,5 +268,4 @@ st.markdown("<hr>", unsafe_allow_html=True)
 st.write(
     "<h3 style='color: #4b7170;font-style: italic;'>Citation</h3>",
     unsafe_allow_html=True,
-)  
-
+)

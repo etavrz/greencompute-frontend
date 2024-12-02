@@ -33,6 +33,7 @@ line-length = 220
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
+ignore = ["E501"]
 
 [build-system]
 requires = ["poetry-core"]

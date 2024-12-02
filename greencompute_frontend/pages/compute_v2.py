@@ -1,7 +1,8 @@
+import json
+import os
 import pickle
 import time
-import os
-import json
+
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
@@ -365,12 +366,10 @@ if st.button("Calculate Carbon Emission"):
             unsafe_allow_html=True,
         )
         time.sleep(0.01)  # Adjust for counting speed
-        
+
     # Add a horizontal line separator
     empty_line_placeholder = st.empty()
     empty_line_placeholder.markdown("<p style='margin-top: 20px;'></p>", unsafe_allow_html=True)
-        
-    
 
     # Use three columns for inputs in the Server Energy and Carbon section
     col1, separator, col2 = st.columns([2.2, 0.1, 2.2])
@@ -390,9 +389,9 @@ if st.button("Calculate Carbon Emission"):
 
         # Create the figure and axes
         fig, ax = plt.subplots(figsize=(10, 0.82))
-        
+
         # Replace with your desired color
-        background_color = "#d2e7ae"  
+        background_color = "#d2e7ae"
         fig.patch.set_facecolor(background_color)
 
         # Generate data points for the spectrum (x-axis)
@@ -448,13 +447,12 @@ if st.button("Calculate Carbon Emission"):
         st.pyplot(fig)
 
         # Add a horizontal line separator
-        st.markdown("<hr style='margin-top: 10px; margin-bottom: 10px;'>",
-                    unsafe_allow_html=True)
+        st.markdown("<hr style='margin-top: 10px; margin-bottom: 10px;'>", unsafe_allow_html=True)
 
         ####################
         # Prediction reulsts
         ####################
-        
+
         cols = st.columns(3)
 
         with cols[0]:
@@ -469,7 +467,7 @@ if st.button("Calculate Carbon Emission"):
                 """,
                 unsafe_allow_html=True,
             )
-            
+
         with cols[1]:
             st.markdown(
                 f"""
@@ -482,7 +480,7 @@ if st.button("Calculate Carbon Emission"):
                 """,
                 unsafe_allow_html=True,
             )
-        
+
         with cols[2]:
             st.markdown(
                 f"""
@@ -495,7 +493,7 @@ if st.button("Calculate Carbon Emission"):
                 """,
                 unsafe_allow_html=True,
             )
-            
+
     # Add a vertical separator line
     with separator:
         st.markdown(
@@ -535,20 +533,19 @@ if st.button("Calculate Carbon Emission"):
         """,
             unsafe_allow_html=True,
         )
-    
-    
+
     #########################
     # Comparison Analyzer
     #########################
     # Horizontal line
     st.markdown("<hr>", unsafe_allow_html=True)
-    
+
     def load_data():
         if os.path.exists(DATA_FILE):
             with open(DATA_FILE, "r") as file:
                 return json.load(file)
         return []
-    
+
     # Output
     current_data = {
         "Total Emission (kgCO₂)": round(total_carbon_emission, 2),
@@ -556,48 +553,50 @@ if st.button("Calculate Carbon Emission"):
         "Predicted Annual Total Energy": round(annual_total_energy, 2),
         "Predicted PUE": round(pue_pred, 2),
     }
-    
+
     # File to store data
     DATA_FILE = "./carbon_data.json"
-    
+
     st.write(
         "<h3 style='color: #4b7170;font-style: italic;'>Output Comparison</h3>",
         unsafe_allow_html=True,
     )
-    
+
     with st.expander("Save the current input and add another input dataset...This comparison analyzes two output predictions based on your most recent input."):
         if os.path.exists(DATA_FILE):
             with open(DATA_FILE, "r") as file:
                 existing_data = json.load(file)
-            
+
             existing_data = eval(existing_data)
             reshaped_data = []
             for key in existing_data:
                 reshaped_data.append({"column": key, "value": existing_data[key]})
-            
+
             cols_compare = st.columns(2)
-            
+
             # Display two output
             with cols_compare[0]:
-                st.write("<h4 style='color: #4b7170;'>Previous Output</h4>",
-                          unsafe_allow_html=True,)
+                st.write(
+                    "<h4 style='color: #4b7170;'>Previous Output</h4>",
+                    unsafe_allow_html=True,
+                )
                 reshaped_data = pd.DataFrame(reshaped_data)
-                reshaped_data.set_index('column', inplace=True)
-                reshaped_data.index.name = None 
+                reshaped_data.set_index("column", inplace=True)
+                reshaped_data.index.name = None
                 st.dataframe(reshaped_data)
-                
+
             with cols_compare[1]:
-                st.write("<h4 style='color: #4b7170;'>Current Output</h4>",
-                          unsafe_allow_html=True,)
+                st.write(
+                    "<h4 style='color: #4b7170;'>Current Output</h4>",
+                    unsafe_allow_html=True,
+                )
                 st.dataframe(current_data)
-            
+
             # Remove file
             os.remove(DATA_FILE)
-            
+
         else:
             # Save data
             st.markdown("Data saved successfully! Please add another input.")
             with open(DATA_FILE, "w") as file:
                 json.dump(str(current_data), file, indent=4)
-     
-    

@@ -362,7 +362,7 @@ if st.button("Calculate Carbon Emission"):
     while current_value < final_value:
         current_value = min(current_value + increment, final_value)
         combined_placeholder.markdown(
-            f"<h3 style='color: #3b8bc2;'>{typed_text}{current_value:.2f} kgCO₂</h3>",
+            f"<h3 style='color: #3b8bc2;'>{typed_text}{current_value:.2f} kgCO₂ per year</h3>",
             unsafe_allow_html=True,
         )
         time.sleep(0.01)  # Adjust for counting speed

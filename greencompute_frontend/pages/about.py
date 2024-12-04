@@ -21,14 +21,14 @@ members = [
     {
         "name": "Nat Buisson",
         "role": "Project Management, UI/UX",
-        "bio": "bio...",
+        "bio": "Nat is responsible for the Project Management of GreenCompute. She is a Master of Information and Data Science (MIDS) student at UC Berkeley with a background as a chemical engineer and over a decade of experience in the chemical manufacturing industry. Her career has focused on optimizing complex industrial processes, leading cross-functional teams, and delivering data-driven solutions to improve operational efficiency and sustainability.",
         "image": "./greencompute_frontend/images/nat.jpeg",
         "email": "nbuisson@berkeley.edu",
     },
     {
         "name": "Alex Hubbard",
         "role": "SME, Model Development",
-        "bio": "bio...",
+        "bio": "Alex is the subject matter expert for GreenCompute, is responsible for data discovery, and helped to create the predictive models used in the tool. He is currently a technology researcher at Lawrence Berkeley National Laboratory, where he performs energy analysis of industrial processes and data centers. Alex is passionate about data-driven approaches to energy savings, specifically in data centers and industrial processes. Outside of data science, Alex is a long-time rock climber and runner, and enjoys doing anything in the outdoors.",
         "image": "./greencompute_frontend/images/alex.png",
         "email": "alex.hubbard@berkeley.edu",
     },

@@ -124,8 +124,8 @@ questions = {
     "Server Energy and Carbon": [
         "About how many servers are located in your data center?",
         "On average, how many CPUs do servers in your data center have?",
-        "On average, how much memory does each server contain?",
-        "What many cores does each server have?",
+        "On average, how much memory (in GB) does each server contain?",
+        "How many cores does each CPU have?",
     ],
     "PUE Model": [
         "Where is your data center located?",
@@ -347,7 +347,7 @@ if st.button("Calculate Carbon Emission"):
     combined_placeholder = st.empty()
 
     # Typing effect for the text
-    text = "The carbon footprint of your data center is "
+    text = "The estimated annual carbon footprint of your data center is "
     typed_text = ""
     for char in text:
         typed_text += char
@@ -362,7 +362,7 @@ if st.button("Calculate Carbon Emission"):
     while current_value < final_value:
         current_value = min(current_value + increment, final_value)
         combined_placeholder.markdown(
-            f"<h3 style='color: #3b8bc2;'>{typed_text}{current_value:.2f} kgCO₂ per year</h3>",
+            f"<h3 style='color: #3b8bc2;'>{typed_text}{current_value:.2f} kgCO₂</h3>",
             unsafe_allow_html=True,
         )
         time.sleep(0.01)  # Adjust for counting speed
@@ -450,7 +450,7 @@ if st.button("Calculate Carbon Emission"):
         st.markdown("<hr style='margin-top: 10px; margin-bottom: 10px;'>", unsafe_allow_html=True)
 
         ####################
-        # Prediction reulsts
+        # Prediction results
         ####################
 
         cols = st.columns(3)

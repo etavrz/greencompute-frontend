@@ -9,7 +9,7 @@ import greencompute_frontend.formatting as fmt
 logo = "./greencompute_frontend/images/logo4.png"
 fmt.add_logo(logo)
 
-df = pd.read_csv("./Cloud Carbon Footprint - Embodied Emissions.csv")
+df = pd.read_csv("./greencompute_frontend/data/cloud_embodied_emissions.csv")
 
 # Rename columns
 df.columns = ["series", "vm", "CPU", "memory", "carbon_emission", "carbon_emission2"]

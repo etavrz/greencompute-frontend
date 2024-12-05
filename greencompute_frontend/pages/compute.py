@@ -24,7 +24,7 @@ fmt.title("GreenCompute")
 
 
 st.write(
-    "<h4 style='color: #4b7170;font-style: italic;font-size: 24px;'>Estimate carbon emission amount for your data centers and get personalized recommendations</h4>",
+    "<h4 style='color: #4b7170;font-style: italic;font-size: 24px;'>Estimate carbon emission amount for your data center by entering the following inputs</h4>",
     unsafe_allow_html=True,
 )
 
@@ -36,16 +36,6 @@ st.write(
 if "show_image" not in st.session_state:
     st.session_state.show_image = False
 
-# Create a button
-if st.button("How we make our predictions"):
-    # Toggle the visibility state
-    st.session_state.show_image = not st.session_state.show_image
-
-# Display the image based on the state
-if st.session_state.show_image:
-    st.image("./greencompute_frontend/images/data_model_simple.png", width=800)
-    st.write("Formula: Total Carbon Emission = PUE * Server Electricity Consumption + Embodied Carbon")
-
 
 # Initialize the session state for displaying the typing effect
 if "show_text_once" not in st.session_state:
@@ -55,19 +45,19 @@ if "show_text_once" not in st.session_state:
 text_placeholder = st.empty()
 
 # Display the text with a typing effect if it's the first page load/refresh
-if st.session_state.show_text_once:
-    # Typing effect for the text
-    text = "Enter your data center's Server Electricity Consumption, Embodied Carbon, and Power Usage Efficiency (PUE) details to generate a carbon emissions prediction."
-    text_placeholder.markdown(f"<h4 style='color: #3b8bc2;'>{text}</h4>", unsafe_allow_html=True)
+# if st.session_state.show_text_once:
+#     # Typing effect for the text
+#     text = "Enter your data center's Server Electricity Consumption, Embodied Carbon, and Power Usage Efficiency (PUE) details to generate a carbon emissions prediction."
+#     text_placeholder.markdown(f"<h4 style='color: #3b8bc2;'>{text}</h4>", unsafe_allow_html=True)
 
-    # Set the session state to prevent showing it again
-    st.session_state.show_text_once = False
-else:
-    # Display static text after the first load/refresh
-    text_placeholder.markdown(
-        "<h4 style='color: #3b8bc2;'>Enter your data center's Server Electricity Consumption, Embodied Carbon, and Power Usage Efficiency (PUE) details to generate a carbon emissions prediction.</h4>",
-        unsafe_allow_html=True,
-    )
+#     # Set the session state to prevent showing it again
+#     st.session_state.show_text_once = False
+# else:
+#     # Display static text after the first load/refresh
+#     text_placeholder.markdown(
+#         "<h4 style='color: #3b8bc2;'>Enter your data center's details to generate carbon footprint estimates.</h4>",
+#         unsafe_allow_html=True,
+#     )
 
 ###########################
 # Preparation for modeling
@@ -129,14 +119,14 @@ questions = {
     ],
     "PUE Model": [
         "Where is your data center located?",
-        "What type of cooling system is used utilize water-side economization?",
-        "Does the cooling system utilize air-side economization?",
+        "Does your cooling system use water-side or air-side economization?",
+        "What type of chiller system is used?",
         "What type of chiller is used?",
     ],
 }
 
-# Add a horizontal line separator
-st.markdown("<hr>", unsafe_allow_html=True)
+# # Add a horizontal line separator
+# st.markdown("<hr>", unsafe_allow_html=True)
 
 # Use three columns for inputs in the Server Energy and Carbon section
 server_col1, separator, server_col2 = st.columns([2.2, 0.1, 2.2])
@@ -190,16 +180,11 @@ input_data_pue = pd.DataFrame(columns=chiller_economizer + STATES)
 # Create a row of zeros
 input_data_pue.loc[0] = 0
 
-# Horizontal line
+# # Horizontal line
 st.markdown("<hr>", unsafe_allow_html=True)
 
-st.write(
-    "<h3 style='color: #4b7170;font-style: italic;'>Estimate Carbon Footprint</h3>",
-    unsafe_allow_html=True,
-)
-
 # Predict Cloud Carbon Emission
-if st.button("Calculate Carbon Emission"):
+if st.button("Compute Carbon Footprint Estimates"):
     ###################################################
     # Predict log-transformed carbon emission
     ###################################################
@@ -362,7 +347,7 @@ if st.button("Calculate Carbon Emission"):
     while current_value < final_value:
         current_value = min(current_value + increment, final_value)
         combined_placeholder.markdown(
-            f"<h3 style='color: #3b8bc2;'>{typed_text}{current_value:.2f} kgCO₂</h3>",
+            f"<h3 style='color: #3b8bc2;'>{typed_text}{current_value:,.2f} kgCO₂</h3>",
             unsafe_allow_html=True,
         )
         time.sleep(0.01)  # Adjust for counting speed
@@ -433,7 +418,7 @@ if st.button("Calculate Carbon Emission"):
         ax.text(
             total_carbon_emission,
             -0.12,
-            f"{total_carbon_emission:.2f} kgCO₂",
+            f"{total_carbon_emission:,.2f} kgCO₂",
             ha="center",
             color="#3b8bc2",
             fontsize=18,
@@ -522,11 +507,11 @@ if st.button("Calculate Carbon Emission"):
         )
         st.markdown(
             f"""
-        Your predicted emission of **{total_carbon_emission:.2f}** kgCO₂ is approximately equal to:
+        Your predicted emission of **{total_carbon_emission:,.2f}** kgCO₂ is approximately equal to:
 
         •  🚗 Driving a typical car for **{equivalent_miles:,.0f} miles** \\
         •  🏡 Powering an average household for **{equivalent_household_days:,.0f} days**\\
-        •  🌲 Sequestering carbon equivalent to **{equivalent_trees:,.0f} trees** over a year
+        •  🌲 Sequestering carbon equivalent to **{equivalent_trees:,.0f} trees**
 
 
         These estimates provide a tangible sense of the environmental impact of your data center's carbon emissions.
@@ -560,3 +545,8 @@ if st.button("Calculate Carbon Emission"):
         mime="application/json",
         data=json_string,
     )
+
+    # Display the image based on the state
+    with st.expander("See how we make our predictions"):
+        st.image("./greencompute_frontend/images/data_model_simple.png", width=800)
+        st.write("Formula: Total Carbon Emission = PUE * Server Electricity Consumption + Embodied Carbon")

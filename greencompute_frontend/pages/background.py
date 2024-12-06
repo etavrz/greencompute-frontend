@@ -44,7 +44,6 @@ st.markdown(
         padding: 10px;    /* Optional: adjust padding for better appearance */
     }
     p, li, span{
-        color: #3b8bc2;
         font-size: 18px;  /* Set default font size */
         /* font-weight: bold;   Make the text bold */
     }
@@ -54,18 +53,26 @@ st.markdown(
     unsafe_allow_html=True,
 )
 # Customizing the title with HTML/CSS to make it larger and green
-st.markdown("<h1 style='color: #4b7170;font-size: 60px;'>Background</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='color: #4b7170;font-size: 60px;'>GreenCompute</h1>", unsafe_allow_html=True)
 
 # Overview
-st.write("##### Data centers are critical infrastructure that significantly contribute to global carbon emissions. Operators lack effective tools to track, manage, and optimize their carbon footprint.")
+st.write("#### Data centers are critical infrastructure that significantly contribute to global carbon emissions. Operators lack effective tools to track, manage, and optimize their carbon footprint.")
+st.markdown("<hr>", unsafe_allow_html=True)
 
+columns = st.columns([0.4, 0.6])
+with columns[0]:
+    st.image(logo, width=400)
+with columns[1]:
+    st.markdown(
+        "## *GreenCompute addresses this gap by offering a user-friendly, data-driven platform to estimate carbon emissions and provide actionable recommendations to optimize energy efficiency and minimize emissions.*"
+    )
 ################################
 # Summary
 ################################
 # Horizontal line
 st.markdown("<hr>", unsafe_allow_html=True)
 st.write(
-    "<h3 style='color: #4b7170;font-style: italic;'>About GreenCompute</h3>",
+    "<h2 style='color: #4b7170;font-style: italic;'>About GreenCompute</h2>",
     unsafe_allow_html=True,
 )
 
@@ -73,19 +80,38 @@ st.markdown(
     """
 GreenCompute is dedicated to addressing the critical environmental challenge of carbon emissions in data centers. Data centers, essential to our digital infrastructure, consume massive amounts of electricity to power servers and cooling systems. These facilities contribute to carbon emissions that are classified into three categories:
 
-•  Scope 1: Direct emissions from on-site fuel combustion, such as backup generators.\\
-•  Scope 2: Indirect emissions from purchased electricity, often the largest contributor for data centers.\\
-•  Scope 3: Indirect emissions from the entire supply chain, including embodied carbon in hardware manufacturing and emissions from logistics.\\
+- **Scope 1** : Direct emissions from on-site fuel combustion, such as backup generators.
+- **Scope 2** : Indirect emissions from purchased electricity, often the largest contributor for data centers.
+- **Scope 3** : Indirect emissions from the entire supply chain, including embodied carbon in hardware manufacturing and emissions from logistics.
 
-Our platform provides a comprehensive solution to measure and reduce these emissions, empowering data center operators and customers with actionable insights:
+Our platform provides a comprehensive solution to measure and reduce these emissions, empowering data center operators and customers with actionable insights.
 
-Carbon Emission Prediction – Leveraging three advanced sub-models, we predict annual carbon emissions by aggregating outputs for IT electricity consumption, embodied carbon, and Power Usage Effectiveness (PUE). Inputs such as memory, CPUs, location, and other factors are used to refine these predictions.
-Energy Efficiency Recommendations – Our LLM-powered chatbot delivers tailored guidance to optimize energy use and reduce emissions, helping companies improve efficiency and sustainability.
-
-By providing clear visibility into carbon emissions and actionable pathways for reduction, GreenCompute supports businesses in meeting sustainability goals while addressing the significant environmental impact of data centers.
- """,
+""",
     unsafe_allow_html=True,
 )
+
+st.markdown("<hr>", unsafe_allow_html=True)
+
+columns = st.columns(2)
+
+with columns[0]:
+    st.markdown(
+        """
+        #### Carbon Emission Estimates
+        Leveraging three advanced sub-models, we predict annual carbon emissions by aggregating outputs for IT electricity consumption, embodied carbon, and Power Usage Effectiveness (PUE). Inputs such as memory, CPUs, location, and other factors are used to refine these predictions.
+        """
+    )
+    st.page_link("pages/compute.py", label="Click here to compute your estimate", icon="💻")
+with columns[1]:
+    st.markdown(
+        """
+        #### Energy Efficiency Recommendations
+        Our LLM-powered chatbot delivers tailored guidance to optimize energy use and reduce emissions, helping companies improve efficiency and sustainability.
+
+
+        """
+    )
+    st.page_link("pages/chat.py", label="Click here to get expert recommendations", icon="🤖")
 
 ################################
 # Data Model

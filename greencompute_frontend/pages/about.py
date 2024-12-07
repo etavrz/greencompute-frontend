@@ -34,7 +34,7 @@ members = [
     },
     {
         "name": "Elias Tavarez",
-        "role": "ML Engineering, GenAI",
+        "role": "ML Engineering, GenAI, Architecture",
         "bio": "Elias is responsible for the infrastructure, deployment, and GenAI components of GreenCompute. He is currently working as a data scientist for BASF, where he has worked on a variety of different projects across the ML spectrum, all within the context of manufacturing. His interests within data science are those around machine learning engineering; more specifically, the creation of infrastructure to deliver ML models to production. Outside of data science, Elias loves to read, play all sorts of sports, and do just about anything with friends and family.",
         "image": "./greencompute_frontend/images/elias.png",
         "email": "etav@berkeley.edu",

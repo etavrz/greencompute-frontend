@@ -98,7 +98,7 @@ with columns[0]:
             Leveraging our trained ML models, we estimate annual carbon emissions by aggregating predictions for IT electricity consumption, embodied carbon, and Power Usage Effectiveness (PUE). Inputs such as memory, CPUs, location, and other factors are used to refine these predictions.
             """
         )
-        st.page_link("pages/compute.py", label="Click here to compute your estimate", icon="💻")
+        st.page_link("pages/compute.py", label="**Click here to compute your estimate**", icon="💻")
 with columns[1]:
     with st.container(border=True):
         st.markdown(
@@ -107,7 +107,7 @@ with columns[1]:
             Our LLM-powered chatbot delivers expert guidance based on recommendations from the [Center of Expertise for Energey Efficiency and Data Centers](https://datacenters.lbl.gov/) to optimize energy use and reduce emissions, helping companies improve their data center operations.
             """
         )
-        st.page_link("pages/chat.py", label="Click here to get expert recommendations", icon="🤖")
+        st.page_link("pages/chat.py", label="**Click here to get expert recommendations**", icon="🤖")
 
 ################################
 # Data Model
